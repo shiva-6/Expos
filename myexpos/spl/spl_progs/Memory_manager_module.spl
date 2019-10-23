@@ -1,0 +1,103 @@
+alias functionNum R1;
+alias pagenum R2;
+
+if(functionNum == 1) then
+	[SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1;	
+	while([SYSTEM_STATUS_TABLE + 2] == 0)do
+		[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 +4] = WAIT_MEM;
+		multipush(R1,R2,R3);
+		
+		call MOD_5;
+		
+		multipop(R1,R2,R3);
+	endwhile;
+	[SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] - 1;
+	[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] - 1;
+	
+	alias retval R0;
+	alias counter R4;
+	counter = 0;
+	while(counter < 128) do 
+		if([MEMORY_FREE_LIST + counter] == 0) then
+			retval = counter;
+			[MEMORY_FREE_LIST + counter] = 1;
+			break;
+		endif;
+		counter = counter + 1;
+	endwhile;
+	return;	
+endif;
+
+if(functionNum == 2) then
+	[MEMORY_FREE_LIST + pagenum] = [MEMORY_FREE_LIST + pagenum] - 1;
+	if([MEMORY_FREE_LIST + pagenum] == 0) then
+		[SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] + 1;
+	endif;
+	
+	alias counter R4;
+	counter = 0;
+	while(counter < 16) do
+		if([PROCESS_TABLE + counter*16 +4] == WAIT_MEM) then
+			[PROCESS_TABLE + counter*16 +4] = READY;
+		endif;
+		counter = counter + 1;
+	endwhile;
+	return;
+endif;
+
+
+if(functionNum == 4) then
+	alias blocknum R2;
+	[DISK_FREE_LIST + blocknum] = 0;
+	return;
+endif;
+
+
+if(functionNum == 5) then
+	alias counter1 R4;
+	alias counter2 R5;
+	alias blocknum R2;
+	counter1 = 0;
+	counter2 = 0;
+	while(counter1 < MAX_PROC_NUM) do
+		counter2 = 0;
+		while(counter2 < 10) do
+			if(blocknum == [DISK_MAP_TABLE + counter1*10 + counter2]) then
+				alias retval R0;
+				retval = [PAGE_TABLE_BASE + counter1*20 + 2*counter2];
+				[MEMORY_FREE_LIST+retval] = [MEMORY_FREE_LIST+retval] + 1;
+				return; 
+			endif;
+			counter2 = counter2 + 1;
+		endwhile;
+		counter1 = counter1 + 1;
+	endwhile;
+	
+	multipush(R0,R1,R2);
+	
+		alias funnum R1;
+		
+		funnum = 1;
+		
+		call MOD_2;
+		alias returnval R0;
+		alias pageno R3;
+		pageno = returnval;
+	multipop(R0,R1,R2);
+	
+	multipush(R0,R1,R2,R3,R4);
+		alias blockno R4;
+		blockno = blocknum;
+		alias pid R2;
+		funnum = 2;
+			
+		pid = [SYSTEM_STATUS_TABLE + 1];
+		
+		call MOD_4;
+		
+	multipop(R0,R1,R2,R3,R4);
+	returnval = pageno;
+	breakpoint;
+	return;
+endif;
+

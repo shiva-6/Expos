@@ -1,0 +1,129 @@
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=8;
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13]=SP;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512-1;
+
+alias funnum R1;
+funnum=1;
+call MOD_1;
+alias returnval R0;
+if(returnval == -1) then
+	restore;
+	alias userSP R2;
+	userSP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+	[[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+2*(userSP-1)/512]*512+(userSP-1)%512]=-1;
+	[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+	SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+	ireturn;
+endif;
+
+alias cpid R5;
+cpid=returnval;
+
+if([PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+4]== -1) then
+	alias funncum R1;
+	alias returnval R0;
+	funnum=1;
+	multipush(R5);
+	call MOD_2;
+	[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+4]=returnval;
+	[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+5]="1110";
+	funnum=1;
+	call MOD_2;
+	multipop(R5);
+	[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+6]=returnval;
+	[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+7]="1110";
+endif;
+
+
+funnum=1;
+multipush(R5);
+call MOD_2;
+multipop(R5);
+[PROCESS_TABLE+cpid*16+11]=returnval;
+
+[PROCESS_TABLE+cpid*16+3]=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+3];
+[PROCESS_TABLE+cpid*16+6]=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+6];
+[PROCESS_TABLE+cpid*16+7]=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+7];
+[PROCESS_TABLE+cpid*16+10]=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+10];
+[PROCESS_TABLE+cpid*16+13]=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+
+[PROCESS_TABLE+cpid*16+0]=0;
+[PROCESS_TABLE+cpid*16+9]=0;
+[PROCESS_TABLE+cpid*16+12]=0;
+
+[PROCESS_TABLE+cpid*16+2]=[SYSTEM_STATUS_TABLE+1];
+[PROCESS_TABLE+cpid*16+4]=CREATED;
+
+
+alias counter R10;
+counter=0;
+while(counter<10) do
+	[DISK_MAP_TABLE+cpid*10+counter]=[DISK_MAP_TABLE+[SYSTEM_STATUS_TABLE+1]+counter];
+	counter=counter+1;
+endwhile;
+
+counter = 0;
+alias temp R11;
+alias temp2 R12;
+temp = [PROCESS_TABLE + cpid*16 + 11]*512 + 496;
+temp2 = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11]*512 + 496;
+
+while(counter < 8)do
+	[temp + 2*counter] = [temp2 + 2*counter];
+	[temp + 2*counter + 1] = [temp2 + 2*counter + 1];
+	if([temp + 2*counter] == 1) then
+		[SEMAPHORE_TABLE + 4*[temp + 2*counter + 1] + 1] = [SEMAPHORE_TABLE + 4*[temp + 2*counter + 1] + 1] + 1;
+	endif;
+	counter = counter + 1;
+endwhile;
+
+counter=0;
+while(counter<16) do
+	[PAGE_TABLE_BASE+cpid*20+counter]=[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+counter];
+	if(counter%2 == 0) then
+		alias pageno R1;
+		pageno=[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+counter];
+		if(pageno!=-1) then
+			[MEMORY_FREE_LIST+pageno]=[MEMORY_FREE_LIST+pageno]+1;
+		endif;
+	endif;
+	counter=counter+1;
+endwhile;
+
+
+funnum=1;
+multipush(R5);
+call MOD_2;
+alias ret R0;
+multipop(R5);
+[PAGE_TABLE_BASE+cpid*20+16]=ret;
+[PAGE_TABLE_BASE+cpid*20+17]=[PTBR+17];
+funnum=1;
+multipush(R5);
+call MOD_2;
+multipop(R5);
+[PAGE_TABLE_BASE+cpid*20+18]=ret;
+[PAGE_TABLE_BASE+cpid*20+19]=[PTBR+19];
+
+alias userSP R2;
+userSP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+
+counter = 0;
+while(counter<512)do
+    [[PAGE_TABLE_BASE+cpid*20+16]*512+counter]=[[PTBR+16]*512+counter];
+    counter=counter+1;
+endwhile;
+counter=0;
+while(counter<512)do
+    [[PAGE_TABLE_BASE+cpid*20+18]*512+counter]=[[PTBR+18]*512+counter];
+    counter=counter+1;
+endwhile;
+
+[[PROCESS_TABLE+cpid*16+11]*512]=BP;
+
+[[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+2*(userSP-1)/512]*512+(userSP-1)%512]=cpid;
+[[PAGE_TABLE_BASE+cpid*20+2*(userSP-1)/512]*512+(userSP-1)%512]=0;
+
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+ireturn;
