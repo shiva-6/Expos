@@ -23,15 +23,19 @@ physicalAddrRetVal = ([PTBR + 2*((userSP - 1)/512)] * 512) + ((userSP-1)%512);
 else
 alias word R5;
 word = [[PTBR + 2*((userSP -3)/512)]*512 + ((userSP-3)%512)];
+
+//changing in state15
 multipush(R0,R1,R2,R3,R4,R5);
-alias terminalwrite R1;
+alias terminal R1;
 alias pid R2;
-alias toprint R3;
-terminalwrite = 3;
-pid = [SYSTEM_STATUS_TABLE + 1];
-toprint = word;
+alias wprint R3;
+terminal=3;
+pid=[SYSTEM_STATUS_TABLE+1];
+wprint=word;
 call MOD_4;
 multipop(R0,R1,R2,R3,R4,R5);
+
+
 alias physicalAddrRetVal R6;
 physicalAddrRetVal = ([PTBR + 2 * (userSP - 1)/512] *512) + ((userSP -1)%512);
 [physicalAddrRetVal]=0;
@@ -41,4 +45,5 @@ SP = userSP;
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] *16 + 9] =0;
 
 ireturn;
+
 

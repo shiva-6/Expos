@@ -1,22 +1,25 @@
-//module 7
+//loading boot module
 loadi(54,67);
 loadi(55,68);
 
-//idle program
+//---------------------------------------------------------
+
+//loading idle code
 loadi(69,11);
 loadi(70,12);
 
-SP = 82*512-1;
+SP=82*512-1;
+//calling boot module;
 call BOOT_MODULE;
 
+//setting page table for idle process
 PTBR=PAGE_TABLE_BASE;
 PTLR=10;
-
 //Library
-[PTBR+0] = 63;
-[PTBR+1] = "0100";
-[PTBR+2] = 64;
-[PTBR+3] = "0100";
+[PTBR+0]=63;
+[PTBR+1]="0100";
+[PTBR+2]=64;
+[PTBR+3]="0100";
 
 //Heap
 [PTBR+4] = -1;
@@ -40,22 +43,26 @@ PTLR=10;
 [PTBR+18] = -1;
 [PTBR+19] = "0000";
 
-//process table for idle
-[PROCESS_TABLE+1]  = 0;
-[PROCESS_TABLE+4]  = RUNNING;
-[PROCESS_TABLE+11] = 82;
-[PROCESS_TABLE+13] = 8*512;
-[PROCESS_TABLE+12] = 0;
-[PROCESS_TABLE+14] = PAGE_TABLE_BASE;
-[PROCESS_TABLE+15] = 10;
 
-[81*512] = [69*512+1];
+[81*512]=[69*512+1];
 
-SP = 8*512;
+//Running idle process
 
-//status table
+
+
+PTBR=PAGE_TABLE_BASE;
 [SYSTEM_STATUS_TABLE+1]=0;
 
+//setting process table for idle
+[PROCESS_TABLE+1]=0;
+[PROCESS_TABLE+4]=RUNNING;
+[PROCESS_TABLE+11]=82;
+[PROCESS_TABLE+13]=8*512;
+[PROCESS_TABLE+12]=0;
+[PROCESS_TABLE+14]=PTBR;
+[PROCESS_TABLE+15]=PTLR;
+
+SP=8*512;
 ireturn;
 
 

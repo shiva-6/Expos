@@ -1,0 +1,24 @@
+load --exhandler ../spl/spl_progs/Exhandler.xsm
+load --library ../expl/library.lib
+load --int=console ../spl/spl_progs/Console.xsm
+load --int=disk ../spl/spl_progs/Disk.xsm
+load --int=timer ../spl/spl_progs/Timer.xsm
+load --module 0 ../spl/spl_progs/Resource_manager_module.xsm
+load --module 1 ../spl/spl_progs/Process_manager_module.xsm
+load --module 2 ../spl/spl_progs/Memory_manager_module.xsm
+load --module 4 ../spl/spl_progs/Device_manager_module.xsm
+load --module 5 ../spl/spl_progs/Context_switch_module.xsm
+load --module 7 ../spl/spl_progs/Boot_module.xsm
+load --os ../spl/spl_progs/os_startup.xsm
+load --int=6 ../spl/spl_progs/Interrupt6.xsm
+load --int=7 ../spl/spl_progs/Interrupt7.xsm
+load --int=8 ../spl/spl_progs/Interrupt8.xsm
+load --int=9 ../spl/spl_progs/Interrupt9.xsm
+load --int=10 ../spl/spl_progs/Interrupt10.xsm
+load --int=11 ../spl/spl_progs/Interrupt11.xsm
+load --int=13 ../spl/spl_progs/Interrupt13.xsm
+load --int=14 ../spl/spl_progs/Interrupt14.xsm
+load --int=15 ../spl/spl_progs/Interrupt15.xsm
+load --init ../expl/expl_progs/s21init.xsm
+load --idle ../expl/expl_progs/s12idle.xsm
+exit

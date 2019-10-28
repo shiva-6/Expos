@@ -1,0 +1,95 @@
+alias functionNum R1;
+alias currentPID R2;
+
+
+//acquire disk
+if(functionNum==3) then
+	while([DISK_STATUS_TABLE]==1) do
+		[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+4]=WAIT_DISK;
+		multipush(R0,R1,R2,R3);
+		call MOD_5;
+		multipop(R0,R1,R2,R3);
+	endwhile;
+	[DISK_STATUS_TABLE]=1;
+	[DISK_STATUS_TABLE+4]=currentPID;
+	return;
+endif;
+
+//acquiring semaphore
+if(functionNum == 6) then
+	alias pid R2;
+	alias counter R3;
+	counter = 0;
+	while(counter < MAX_SEM_COUNT) do 
+		if([SEMAPHORE_TABLE + counter * 4 + 1] == 0 ) then
+			[SEMAPHORE_TABLE + counter * 4 + 1] = 1;
+			[SEMAPHORE_TABLE + counter * 4 + 0] = -1;
+			R0 = counter;
+			return;
+		endif;
+		counter = counter + 1;
+	endwhile;
+	if (counter == 32 ) then
+		R0 = -1;
+		return;
+	endif;
+	
+endif;
+
+
+// Releasing Semaphore 
+
+if( functionNum == 7 ) then
+	alias semid R2;
+	alias pid R3;
+	
+	if( [SEMAPHORE_TABLE + semid * 4 ] == pid ) then
+		[SEMAPHORE_TABLE + semid * 4 ] = -1;
+		alias counter R4;
+		while( counter < MAX_PROC_NUM ) do
+			if( ([PROCESS_TABLE + counter*16 + 4] == WAIT_SEMAPHORE) && ([PROCESS_TABLE + counter*16 + 5] == semid )) then
+				[PROCESS_TABLE + counter*16 + 4] = READY;	
+			endif;
+			counter = counter + 1;
+		endwhile;
+	endif;
+	
+	[SEMAPHORE_TABLE + semid * 4 + 1] = [SEMAPHORE_TABLE + semid * 4 + 1]-1;
+	return;
+endif;
+
+//acquire terminal function
+if(functionNum==8) then
+	while([TERMINAL_STATUS_TABLE]==1) do
+		[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+4]=WAIT_TERMINAL;
+		multipush(R1,R2);
+		call MOD_5;
+		multipop(R1,R2);
+	endwhile;
+	[TERMINAL_STATUS_TABLE]=1;
+	[TERMINAL_STATUS_TABLE+1]=currentPID;
+	return;
+endif;
+
+//release termianl function
+if(functionNum==9) then
+	if([TERMINAL_STATUS_TABLE+1]!=currentPID) then
+		alias ret R0;
+		ret=-1;
+		return;
+	endif;
+	[TERMINAL_STATUS_TABLE]=0;
+	alias counter R5;
+	counter=0;
+	while(counter<16) do
+		if([PROCESS_TABLE+counter*16+4]==WAIT_TERMINAL) then
+			[PROCESS_TABLE+counter*16+4]=READY;
+		endif;
+		counter=counter+1;
+	endwhile;
+	alias ret R0;
+	ret=0;
+	return;
+endif;
+
+

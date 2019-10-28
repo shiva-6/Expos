@@ -6,7 +6,7 @@
 0
 0
 0
-MOV R0,1
+MOV R0, 1
 MOV R2, 5
 GE R2, R0
 JZ R2, 2076

@@ -1,34 +1,35 @@
-breakpoint;
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13]=SP;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512-1;
+
 alias userSP R0;
-[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 +13] = SP;
-userSP = SP;
+userSP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
 
-alias syscallnum R1;
-syscallnum = [[PTBR + 2*(userSP-5)/512]*512 + (userSP-5)%512];
+alias syscall R1;
+syscall=[[PTBR+((userSP-5)/512)*2]*512+(userSP-5)%512];
 
-SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11]*512 -1;
-
-if(syscallnum == 17) then
-
-	[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 9] = 17;
-	alias pprt R2;
-	pprt = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 +11]*512 + 496;
-	alias counter R3;
-	counter = 0;
+if(syscall == 17 ) then
+	[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=17;
 	
-	while(counter < 8) do
-		if([pprt + counter*2] == -1) then
+	// getting free slot for semaphore
+	alias pprt R10;
+	pprt=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+496;
+	alias counter R3;
+	counter=0;
+	while(counter<8) do
+		if([pprt+counter*2]==-1) then
 			break;
 		endif;
+		counter=counter+1;
 	endwhile;
-	 
-	if(counter == 8) then
-		[[PTBR + 2*(userSP-1)/512]*512 + (userSP-1)%512] = -1;
-		SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 +13];
-		[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 9] = 0;
-		ireturn; 
+		
+	// if no free slot returning -1
+	if(counter==8) then
+		[[PTBR+((userSP-1)/512)*2]*512+(userSP-1)%512]=-1;
+		[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+		SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+		ireturn;
 	endif;
-	
+
 	//acquiring semaphore
 	multipush(R0,R1,R2,R3);
 	R1=6;
@@ -50,10 +51,13 @@ if(syscallnum == 17) then
 	[pprt+counter*2]=1;
 	[pprt+counter*2+1]=semaphore_index;
 	[[PTBR+((userSP-1)/512)*2]*512+(userSP-1)%512]=counter;
+	[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+	SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+	ireturn;
 endif;
 
-if(syscallnum == 18) then
-	
+
+if(syscall == 18) then 
 	[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=18;
 	
 	// checking whteher semaphore descriptor is valid or not
@@ -80,7 +84,11 @@ if(syscallnum == 18) then
 	// releasing the semaphore descriptor
 	[pprt+index*2]=-1;
 	[[PTBR+((userSP-1)/512)*2]*512+(userSP-1)%512]=0;
-endif; 
-SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 +13];
-[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 9] = 0;
-ireturn;
+	
+	//returning to user mode	
+	[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+	SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+	ireturn;
+endif;
+
+
