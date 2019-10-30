@@ -2,11 +2,11 @@
 cd spl
 
 pwd
-./spl spl_progs/s19exhandler.spl
-./spl spl_progs/s16console_interrupt.spl
-./spl spl_progs/s18disk_interrupt.spl
-./spl spl_progs/s14sample_timer.spl
-./spl spl_progs/MOD0.spl
+./spl spl_progs/Exhandler.spl
+./spl spl_progs/Console.spl
+./spl spl_progs/Disk.spl
+./spl spl_progs/Timer.spl
+./spl spl_progs/.spl
 ./spl spl_progs/MOD1.spl
 ./spl spl_progs/MOD1.spl
 ./spl spl_progs/s19MOD2.spl

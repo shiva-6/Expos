@@ -1,0 +1,202 @@
+alias PT R10;
+PT = PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16;
+
+[PT + 13] = SP;
+SP=[PT + 11]*512-1;
+
+alias userSP R8;
+userSP=[PT + 13];
+
+alias syscall R9;
+syscall=[[PTBR+((userSP-5)/512)*2]*512+(userSP-5)%512];
+
+if(syscall == 1) then
+	[PT + 9] = 1;
+	R0 = [[PTBR + 2*((userSP-4)/512)]*512 + (userSP-4)%512];
+	alias counter R1;
+	counter = 0;
+	
+	//checks if already the file is present
+	while(counter < MAX_FILE_NUM) do
+		if([INODE_TABLE + counter*16 + 1] == R0) then
+			[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = 0;
+			[PT + 9] = 0;
+			SP = [PT + 13];
+			ireturn;
+		endif;			
+		counter = counter + 1;
+	endwhile;
+	
+	//searches for a free entry
+	counter = 0;
+	while(counter < MAX_FILE_NUM) do
+		if([INODE_TABLE + counter*16 + 1] == -1) then
+			break;
+		endif;
+		counter = counter + 1;
+	endwhile;
+	
+	if(counter == 60) then
+		[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = -1;
+		[PT + 9] = 0;
+		SP = [PT + 13];
+		ireturn;
+	endif;
+	
+	alias IT R2;
+	IT = INODE_TABLE + counter*16;
+	alias RF R3;
+	RF = ROOT_FILE + counter*8;
+	
+	[IT + 0] = DATA;
+	[IT + 1] = R0;
+	[IT + 2] = 0;
+	[IT + 3] = [PT + 3];
+	[IT + 4] = [[PTBR + 2*((userSP-3)/512)]*512 + (userSP-3)%512];
+	
+	[RF + 0] = R0;
+	[RF + 1] = 0;
+	[RF + 2] = DATA;
+	[RF + 3] = [USER_TABLE + [PT + 3]*2];
+	[RF + 4] = [[PTBR + 2*((userSP-3)/512)]*512 + (userSP-3)%512];
+	
+	[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = 0;
+endif;
+
+if(syscall == 4) then
+	[PT + 9] = 4;
+	R0 = [[PTBR + 2*((userSP-4)/512)]*512 + (userSP-4)%512];
+	
+	//Finds the index of file in the inode table
+	alias counter R1;
+	counter = 0;
+	while(counter < MAX_FILE_NUM) do
+		if([INODE_TABLE + counter*16 + 1] == R0)
+			break;
+		endif;
+		counter = counter + 1;
+	endwhile;
+	
+	//fails to find the file i.e, if file is not present
+	if(counter == 60) then
+		[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = 0;
+		SP = [PT + 13];
+		[PT + 9] = 0;
+		ireturn;
+	endif;
+	
+	alias IT R2;
+	IT = INODE_TABLE + counter*16;
+	
+	//If the file is not a data file return -1
+	if([IT + 1] != DATA) then
+		[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = -1;
+		SP = [PT + 13];
+		[PT + 9] = 0;
+		ireturn;
+	endif;
+	
+	//If the exclusive permission is set 
+	if([IT + 4] == 0) then
+		if(([PT + 3] != [IT + 3]) && ([PT + 3] != 1))then
+			[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = -1;
+			SP = [PT + 13];
+			[PT + 9] = 0;
+			ireturn;
+		endif;
+	endif;
+	
+	//acquire the inode for deleting the content
+	multipush(R0,R1,R2);
+		R2 = R1;
+		R1 = 4;
+		R3 = [SYSTEM_STATUS_TABLE + 1];
+		
+		call MOD_0;
+
+	multipop(R0,R1,R2);
+	
+	//if the file has an open instance 
+	if([FILE_STATUS_TABLE + counter*4 + 1] != -1) then
+		multipush(R0,R1,R2);
+			R2 = R1;
+			R1 = 5;
+			R3 = [SYSTEM_STATUS_TABLE + 1];
+			
+			call MOD_0;
+			alias retval R4;
+			retval = R0;
+		multipop(R0,R1,R2);
+		
+		[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = -2;
+		SP = [PT + 13];
+		[PT + 9] = 0;
+		ireturn;
+	endif;
+	
+	//check the buffer table to reset dirty bit of each block
+	alias count2 R5;
+	count2 = 0;
+	while(count2 < 4) do
+		if([BUFFER_TABLE] == [IT + 8 + count2]) then
+			if([BUFFER_TABLE + 1] == 1)then
+				[BUFFER_TABLE + 1] = 0;
+			endif;
+			
+			multipush(R0,R1,R2,R3,R4,R5);
+				R1 = 4;
+				R2 = []
+			multipop(R0,R1,R2,R3,R4,R5);
+		endif;
+		
+		if([BUFFER_TABLE + 4] == [IT + 8 + count2]) then
+		
+		endif;
+
+		if([BUFFER_TABLE + 8] == [IT + 8 + count2]) then
+		
+		endif;
+		
+		if([BUFFER_TABLE + 12] == [IT + 8 + count2]) then
+		
+		endif;
+	endwhile;
+endif;
+
+SP = [PT + 13];
+[PT + 9] = 0;
+ireturn;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
