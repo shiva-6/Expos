@@ -12,6 +12,7 @@ cd spl
 ./spl spl_progs/Device_manager_module.spl
 ./spl spl_progs/Context_switch_module.spl
 ./spl spl_progs/Boot_module.spl
+./spl spl_progs/Interrupt4.spl
 ./spl spl_progs/Interrupt6.spl
 ./spl spl_progs/Interrupt7.spl
 ./spl spl_progs/Interrupt8.spl

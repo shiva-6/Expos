@@ -15,6 +15,51 @@ if(functionNum==3) then
 	return;
 endif;
 
+//Acquire Inode
+if(functionNum == 4)then
+	alias Iindex R2;
+	alias pid R3;
+	while([FILE_STATUS_TABLE + Iindex*4] != -1) do
+		[PROCESS_TABLE + pid*16 + 4] = WAIT_FILE;
+		[PROCESS_TABLE + pid*16 + 5] = Iindex;
+		
+		call MOD_5;
+	endwhile;
+	
+	if([INODE_TABLE + Iindex*16 + 1] == -1) then
+		R0 = -1;
+		return;
+	endif;
+	
+	[FILE_STATUS_TABLE + Iindex*4] = pid;
+	R0 = 0;
+	return;
+endif;
+
+//Releasing Inode
+if(functionNum == 5)then
+	alias Iindex R2;
+	alias pid R3;
+	if([FILE_STATUS_TABLE + Iindex*4] != pid) then
+		R0 = -1;
+		return;
+	endif;
+	
+	[FILE_STATUS_TABLE + Iindex*4] = -1;
+	
+	alias counter R4;
+	counter = 0;
+	while(counter < MAX_PROC_NUM)do
+		if( ([PROCESS_TABLE + counter*16 + 4] == WAIT_FILE) && ([PROCESS_TABLE + counter*16 + 5] == Iindex )) then
+			[PROCESS_TABLE + counter*16 + 4] = READY;	
+		endif;
+		counter = counter + 1;
+	endwhile;
+	
+	R0 = 0;
+	return;
+endif;
+
 //acquiring semaphore
 if(functionNum == 6) then
 	alias pid R2;
@@ -38,7 +83,6 @@ endif;
 
 
 // Releasing Semaphore 
-
 if( functionNum == 7 ) then
 	alias semid R2;
 	alias pid R3;

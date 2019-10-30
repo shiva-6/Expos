@@ -7,6 +7,9 @@ SP=[PT + 11]*512-1;
 alias userSP R8;
 userSP=[PT + 13];
 
+alias ret R11;
+ret = [PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512;
+
 alias syscall R9;
 syscall=[[PTBR+((userSP-5)/512)*2]*512+(userSP-5)%512];
 
@@ -19,7 +22,7 @@ if(syscall == 1) then
 	//checks if already the file is present
 	while(counter < MAX_FILE_NUM) do
 		if([INODE_TABLE + counter*16 + 1] == R0) then
-			[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = 0;
+			[ret] = 0;
 			[PT + 9] = 0;
 			SP = [PT + 13];
 			ireturn;
@@ -36,8 +39,9 @@ if(syscall == 1) then
 		counter = counter + 1;
 	endwhile;
 	
+	//If maximum number of files checked and there is no free entry
 	if(counter == 60) then
-		[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = -1;
+		[ret] = -1;
 		[PT + 9] = 0;
 		SP = [PT + 13];
 		ireturn;
@@ -48,19 +52,29 @@ if(syscall == 1) then
 	alias RF R3;
 	RF = ROOT_FILE + counter*8;
 	
-	[IT + 0] = DATA;
+	//Inode table is being initialised
+	[IT + 0] = 2;
 	[IT + 1] = R0;
 	[IT + 2] = 0;
 	[IT + 3] = [PT + 3];
 	[IT + 4] = [[PTBR + 2*((userSP-3)/512)]*512 + (userSP-3)%512];
 	
+	//Initialises all blocks to be fresh
+	alias count R4;
+	count = 8;
+	while(count < 12) do
+		[IT + count] = -1;
+		count = count + 1;
+	endwhile;
+	
+	//Rootfile is being Initialised
 	[RF + 0] = R0;
 	[RF + 1] = 0;
-	[RF + 2] = DATA;
+	[RF + 2] = 2;
 	[RF + 3] = [USER_TABLE + [PT + 3]*2];
 	[RF + 4] = [[PTBR + 2*((userSP-3)/512)]*512 + (userSP-3)%512];
 	
-	[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = 0;
+	[ret] = 0;
 endif;
 
 if(syscall == 4) then
@@ -71,41 +85,48 @@ if(syscall == 4) then
 	alias counter R1;
 	counter = 0;
 	while(counter < MAX_FILE_NUM) do
-		if([INODE_TABLE + counter*16 + 1] == R0)
+		if([INODE_TABLE + counter*16 + 1] == R0)then
 			break;
 		endif;
 		counter = counter + 1;
 	endwhile;
 	
-	//fails to find the file i.e, if file is not present
+	breakpoint;
+	//Fails to find the file i.e, if file is not present
 	if(counter == 60) then
-		[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = 0;
+		[ret] = 0;
 		SP = [PT + 13];
 		[PT + 9] = 0;
 		ireturn;
 	endif;
+	
+	breakpoint;
 	
 	alias IT R2;
 	IT = INODE_TABLE + counter*16;
 	
 	//If the file is not a data file return -1
-	if([IT + 1] != DATA) then
-		[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = -1;
+	if([IT + 0] != 2) then
+		[ret] = -1;
 		SP = [PT + 13];
 		[PT + 9] = 0;
+		print "yell";
 		ireturn;
 	endif;
+	
+	breakpoint;
 	
 	//If the exclusive permission is set 
 	if([IT + 4] == 0) then
 		if(([PT + 3] != [IT + 3]) && ([PT + 3] != 1))then
-			[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = -1;
+			[ret] = -1;
 			SP = [PT + 13];
 			[PT + 9] = 0;
 			ireturn;
 		endif;
 	endif;
 	
+	breakpoint;
 	//acquire the inode for deleting the content
 	multipush(R0,R1,R2);
 		R2 = R1;
@@ -124,79 +145,61 @@ if(syscall == 4) then
 			R3 = [SYSTEM_STATUS_TABLE + 1];
 			
 			call MOD_0;
-			alias retval R4;
-			retval = R0;
 		multipop(R0,R1,R2);
 		
-		[[PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512] = -2;
+		[ret] = -2;
 		SP = [PT + 13];
 		[PT + 9] = 0;
 		ireturn;
 	endif;
 	
 	//check the buffer table to reset dirty bit of each block
-	alias count2 R5;
+	alias count1 R5;
+	alias count2 R6;
+	count1 = 0;
 	count2 = 0;
-	while(count2 < 4) do
-		if([BUFFER_TABLE] == [IT + 8 + count2]) then
-			if([BUFFER_TABLE + 1] == 1)then
-				[BUFFER_TABLE + 1] = 0;
+	while(count1 < 4) do
+		while(count2 < 4) do
+			if([BUFFER_TABLE + count2*4] == [IT + 8 + count1]) then
+				if([BUFFER_TABLE + count2*4 + 1] == 1)then
+					[BUFFER_TABLE + count2*4 + 1] = 0;
+				endif;
+				
+				multipush(R0,R1,R2);
+					R1 = 4;
+					R2 = [BUFFER_TABLE + count2*4];
+					R3 = [SYSTEM_STATUS_TABLE + 1];
+					
+					call MOD_2;
+				multipop(R0,R1,R2);
 			endif;
-			
-			multipush(R0,R1,R2,R3,R4,R5);
-				R1 = 4;
-				R2 = []
-			multipop(R0,R1,R2,R3,R4,R5);
-		endif;
-		
-		if([BUFFER_TABLE + 4] == [IT + 8 + count2]) then
-		
-		endif;
-
-		if([BUFFER_TABLE + 8] == [IT + 8 + count2]) then
-		
-		endif;
-		
-		if([BUFFER_TABLE + 12] == [IT + 8 + count2]) then
-		
-		endif;
+			count2 = count2 + 1;
+		endwhile;
+		count2=0;
+		count1 = count1 + 1;
 	endwhile;
+	
+	breakpoint;
+	//Invalidating the Inode Table
+	[IT + 1] = -1;
+	
+	//Invalidating the Root File
+	[ROOT_FILE + counter*8] = -1;
+	
+	//Releasing the lock
+	multipush(R0,R1,R2);
+		R2 = R1;
+		R1 = 5;
+		R3 = [SYSTEM_STATUS_TABLE + 1];
+		
+		call MOD_0;
+
+	multipop(R0,R1,R2);
+	
+	[ret] = 0;
 endif;
 
 SP = [PT + 13];
 [PT + 9] = 0;
 ireturn;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

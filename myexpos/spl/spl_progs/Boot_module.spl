@@ -4,6 +4,10 @@ loadi(60,4);
 
 //disk free list
 loadi(61,2);
+
+//root file
+loadi(62,5);
+
 //library
 loadi(63,13);
 loadi(64,14);
@@ -24,25 +28,25 @@ loadi(5,18);
 loadi(6,19);
 loadi(7,20);
 
-
-//INT7 
-loadi(16,29);
-loadi(17,30);
-
-
-//INT8
-loadi(18,31);
-loadi(19,32);
+//INT4
+loadi(10,23);
+loadi(11,24);
 
 //INT6
 loadi(14,27);
 loadi(15,28);
 
+//INT7 
+loadi(16,29);
+loadi(17,30);
+
+//INT8
+loadi(18,31);
+loadi(19,32);
 
 //INT9
 loadi(20,33);
 loadi(21,34);
-
 
 //INT10
 loadi(22,35);
@@ -64,21 +68,17 @@ loadi(31,44);
 loadi(32,45);
 loadi(33,46);
 
-
 //loading module 0
 loadi(40,53);
 loadi(41,54);
-
 
 //MOD1
 loadi(42,55);
 loadi(43,56);
 
-
 //MOD2
 loadi(44,57);
 loadi(45,58);
-
 
 //loading module 4
 loadi(48,61);
@@ -91,8 +91,6 @@ loadi(51,64);
 //console interrupt 
 loadi(8,21);
 loadi(9,22);
-
-
 
 //intialiseing terminal status table
 [TERMINAL_STATUS_TABLE]=0;
@@ -135,6 +133,7 @@ PTLR=10;
 [PROCESS_TABLE+16+12]=0;
 [PROCESS_TABLE+16+14]=PTBR;
 [PROCESS_TABLE+16+15]=PTLR;
+[PROCESS_TABLE+16+3]=1;
 
 
 //setting up user stack
@@ -184,4 +183,21 @@ endwhile;
 [DISK_MAP_TABLE+10+4]=7;
 [DISK_MAP_TABLE+10+5]=8;
 
+//Initialising File Status Table
+i=0;
+while(i < 60) do
+	[FILE_STATUS_TABLE + i*4 + 0] = -1;
+	[FILE_STATUS_TABLE + i*4 + 1] = -1;
+	i = i + 1;
+endwhile;
+
+//Initialising Buffer Table
+i=0;
+while(i < 4) do
+	[BUFFER_TABLE + i*4 + 0] = -1;
+	[BUFFER_TABLE + i*4 + 1] = 0;
+	[BUFFER_TABLE + i*4 + 2] = -1;
+	i = i + 1;
+endwhile;
 return;
+

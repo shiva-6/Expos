@@ -10,6 +10,7 @@ load --module 4 ../spl/spl_progs/Device_manager_module.xsm
 load --module 5 ../spl/spl_progs/Context_switch_module.xsm
 load --module 7 ../spl/spl_progs/Boot_module.xsm
 load --os ../spl/spl_progs/os_startup.xsm
+load --int=4 ../spl/spl_progs/Interrupt4.xsm
 load --int=6 ../spl/spl_progs/Interrupt6.xsm
 load --int=7 ../spl/spl_progs/Interrupt7.xsm
 load --int=8 ../spl/spl_progs/Interrupt8.xsm
