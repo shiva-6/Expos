@@ -91,7 +91,6 @@ if(syscall == 4) then
 		counter = counter + 1;
 	endwhile;
 	
-	breakpoint;
 	//Fails to find the file i.e, if file is not present
 	if(counter == 60) then
 		[ret] = 0;
@@ -99,8 +98,6 @@ if(syscall == 4) then
 		[PT + 9] = 0;
 		ireturn;
 	endif;
-	
-	breakpoint;
 	
 	alias IT R2;
 	IT = INODE_TABLE + counter*16;
@@ -110,11 +107,8 @@ if(syscall == 4) then
 		[ret] = -1;
 		SP = [PT + 13];
 		[PT + 9] = 0;
-		print "yell";
 		ireturn;
 	endif;
-	
-	breakpoint;
 	
 	//If the exclusive permission is set 
 	if([IT + 4] == 0) then
@@ -125,8 +119,7 @@ if(syscall == 4) then
 			ireturn;
 		endif;
 	endif;
-	
-	breakpoint;
+
 	//acquire the inode for deleting the content
 	multipush(R0,R1,R2);
 		R2 = R1;
@@ -159,27 +152,20 @@ if(syscall == 4) then
 	count1 = 0;
 	count2 = 0;
 	while(count1 < 4) do
-		while(count2 < 4) do
-			if([BUFFER_TABLE + count2*4] == [IT + 8 + count1]) then
-				if([BUFFER_TABLE + count2*4 + 1] == 1)then
-					[BUFFER_TABLE + count2*4 + 1] = 0;
-				endif;
-				
-				multipush(R0,R1,R2);
-					R1 = 4;
-					R2 = [BUFFER_TABLE + count2*4];
-					R3 = [SYSTEM_STATUS_TABLE + 1];
-					
-					call MOD_2;
-				multipop(R0,R1,R2);
-			endif;
-			count2 = count2 + 1;
-		endwhile;
-		count2=0;
+		count2 = [IT + 8 + count1]%4;
+		if([BUFFER_TABLE + count2*4] == [IT + 8 + count1]) then
+			[BUFFER_TABLE + count2*4 + 1] = 0;
+		endif;
+		multipush(R0,R1,R2);
+			R1 = 4;
+			R2 = [IT + 8 + count1];
+			R3 = [SYSTEM_STATUS_TABLE + 1];
+			
+			call MOD_2;
+		multipop(R0,R1,R2);
 		count1 = count1 + 1;
 	endwhile;
-	
-	breakpoint;
+
 	//Invalidating the Inode Table
 	[IT + 1] = -1;
 	
@@ -202,4 +188,3 @@ endif;
 SP = [PT + 13];
 [PT + 9] = 0;
 ireturn;
-
