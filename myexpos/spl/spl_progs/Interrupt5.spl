@@ -1,0 +1,108 @@
+alias PT R10;
+PT = PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16;
+
+[PT + 13] = SP;
+SP=[PT + 11]*512-1;
+
+alias userSP R8;
+userSP=[PT + 13];
+
+alias ret R11;
+ret = [PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512;
+
+alias syscall R9;
+syscall=[[PTBR+((userSP-5)/512)*2]*512+(userSP-5)%512];
+
+if(syscall == 2) then
+	//Setting mode flag
+	[PT + 9] = 2;
+	
+	//FileName
+	alias filename R1;
+	filename = [[PTBR + 2*((userSP-4)/512)]*512 + (userSP-4)%512];
+	
+	//Finding a free slot in per process resource table
+	alias pprt R0;
+	pprt = [PT + 11]*512 + 496;
+	alias fileid R2;
+	fileid = 0;
+	while(fileid < 8)do
+		if([pprt + fileid*2] == -1]) then
+			break;
+		endif;
+		fileid = fileid + 1;
+	endwhile;
+	
+	//If there is no free resource table entry return -3
+	if(fileid == 8) then
+		[ret] = -3;
+		SP = [PT + 13];
+		[PT + 9] = 0;
+		ireturn;
+	endif;
+	
+	//Requesting for Open file table entry If possible
+	multipush(R0,R1,R2);
+		R2 = R1;
+		R1 = 3;
+		call MOD_3;
+		alias Retval R4;
+		Retval = R0;
+	multipop(R0,R1,R2);
+	
+	//If open fails return error code
+	if(Retval < 0) then
+		[ret] = Retval;
+		SP = [PT + 13];
+		[PT + 9] = 0;
+		ireturn;
+	endif;
+	
+	//Setting per process resource table
+	[pprt + fileid*2]     = 0;
+	[pprt + fileid*2 + 1] = Retval;
+		
+	//Returning the file descriptor
+	[ret] = fileid;
+	
+endif;
+
+if(syscall == 3) then
+	//Setting mode flag
+	[PT + 9] = 3;
+	
+	//per process resource table entry starting point
+	alias pprt R0;
+	pprt = [PT + 11]*512 + 496;
+	
+	//Obtainig file descriptor and checks whether it is invalid and also checks whether resource identifier is valid
+	alias fileid R1;
+	fileid = [[PTBR + 2*((userSP-4)/512)]*512 + (userSP-4)%512];
+	if((fileid < 0) || (fileid > 7) ||	([pprt + fileid*2] != 0)) then
+		[ret] = -1;
+		SP = [PT + 13];
+		[PT + 9] = 0;
+		ireturn;
+	endif;
+	
+	//Obtaining open file index
+	alias openfid R2;
+	openfid = [pprt + 2*fileid + 1];
+	
+	//Calling close function of file manager module
+	multipush(R0,R1,R2);
+		R1 = 4;
+		call MOD_3;
+	multipop(R0,R1,R2);
+	
+	//Invalidating per process resource table entry
+	[pprt + 2*fileid] = -1;
+	
+	//return value
+	[ret] = 0;
+	
+endif;
+
+SP 		 = [PT + 13];
+[PT + 9] = 0;
+ireturn;
