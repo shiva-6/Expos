@@ -42,13 +42,13 @@ if(syscall == 2) then
 	endif;
 	
 	//Requesting for Open file table entry If possible
-	multipush(R0,R1,R2);
+	multipush(R0,R1,R2,R8,R9,R10,R11);
 		R2 = R1;
 		R1 = 3;
 		call MOD_3;
 		alias Retval R4;
 		Retval = R0;
-	multipop(R0,R1,R2);
+	multipop(R0,R1,R2,R8,R9,R10,R11);
 	
 	//If open fails return error code
 	if(Retval < 0) then
@@ -90,10 +90,10 @@ if(syscall == 3) then
 	openfid = [pprt + 2*fileid + 1];
 	
 	//Calling close function of file manager module
-	multipush(R0,R1,R2);
+	multipush(R0,R1,R2,R8,R9,R10,R11);
 		R1 = 4;
 		call MOD_3;
-	multipop(R0,R1,R2);
+	multipop(R0,R1,R2,R8,R9,R10,R11);
 	
 	//Invalidating per process resource table entry
 	[pprt + 2*fileid] = -1;

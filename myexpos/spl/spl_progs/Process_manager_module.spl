@@ -2,7 +2,7 @@ alias functionnum R1;
 alias pid R2;
 alias upage R3;
 pid=[SYSTEM_STATUS_TABLE+1];
-upage=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11];
+upageno=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11];
 
 if(functionnum == 1) then
 	alias counter R2;
@@ -26,10 +26,11 @@ endif;
 if(functionnum ==2) then
 	alias counter R4;
 	alias pprt R5;
-	pprt=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512 + 496;
+	pprt=upageno*512 + 496;
 	counter=0;
-	while(counter<8) do
-		if( ([pprt+counter*2]==1) && ([pprt+counter*2+1]!=-1)) then
+	
+	while(counter < 8) do
+		if( ([pprt+counter*2]==SEMAPHORE) && ([pprt+counter*2+1]!=-1)) then
 			R6=R4;			
 			multipush(R0,R1,R2,R3,R4,R5);
 			R1=7;
@@ -38,13 +39,21 @@ if(functionnum ==2) then
 			call MOD_0;
 			multipop(R0,R1,R2,R3,R4,R5);
 		endif;
+		if([pprt + counter*2]==FILE) then		
+			multipush(R0,R1,R2,R3,R4,R5);
+				R1 = 4;
+				R2 = [pprt + counter*2 + 1];
+				call MOD_3;
+			multipop(R0,R1,R2,R3,R4,R5);
+		endif;
 		counter=counter+1;
 	endwhile;
+	
 	multipush(R1,R2,R3);
 	alias funnum R1;
 	funnum = 2;
 	alias page R2;
-	page=upage;
+	page=upageno;
 	call MOD_2;
 	multipop(R1,R2,R3);
 	return;

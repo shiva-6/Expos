@@ -1,0 +1,150 @@
+if(R1 == 3) then
+	
+	//Finding the file in the Inode table
+	alias counter R3;
+	counter = 0;
+	while(counter < MAX_FILE_NUM)do
+		if([INODE_TABLE + counter*16 + 1] == R2)then
+			break;
+		endif;
+		counter = counter + 1;
+	endwhile;
+	
+	if(counter == MAX_FILE_NUM) then
+		R0 = -1
+		return;
+	endif;
+	
+	//Calling acquire Inode in Resource manager module
+	multipush(R0,R1,R2,R3);
+		R1 = 4;
+		R2 = counter;
+		R3 = [SYSTEM_STATUS_TABLE + 1];
+		
+		call MOD_0;
+		
+		if(R0 == -1) then
+			return;
+		endif;
+	multipop(R0,R1,R2,R3);
+	
+	alias IT R9;
+	IT = INODE_TABLE + counter*16;
+	
+	//If the file type is EXEC then return -1
+	if([IT + 0] == EXEC)then
+		multipush(R0,R1,R2,R3,R9);
+			R1 = 5;
+			R2 = counter;
+			R3 = [SYSTEM_STATUS_TABLE + 1];
+			
+			call MOD_0;
+		multipop(R0,R1,R2,R3,R9);
+		
+		R0 = -1;
+		return;
+	endif;
+
+	//Free entry in open file table
+	alias count R4;
+	count = 0;
+	while(count < MAX_OPENFILE_NUM)do
+		if([OPEN_FILE_TABLE + count*4] == -1)then
+			break;
+		endif;
+		count = count + 1;
+	endwhile;
+	
+	//If there are no free entries
+	if(count == MAX_OPENFILE_NUM)then
+		multipush(R0,R1,R2,R3,R9,R4);
+			R1 = 5;
+			R2 = counter;
+			R3 = [SYSTEM_STATUS_TABLE + 1];
+			
+			call MOD_0;
+		multipop(R0,R1,R2,R3,R9,R4);		
+		R0 = -2;
+		return;
+	endif;
+	
+	//Updating open file table and file status table
+	alias OT R10;
+	OT = OPEN_FILE_TABLE + count*4;
+	if(R2 == root)then
+		[OT + 0] = INODE_ROOT;
+	else
+		alias FT R11;
+		FT = FILE_STATUS_TABLE + counter*4 + 1;
+		if([FT] == -1) then
+			[FT] = 1;
+		else 
+			[FT] = [FT] + 1;
+		endif;
+		[OT + 0] = counter;
+	endif;
+	
+	[OT + 1] = 1;
+	[OT + 2] = 0;
+	
+	//Releasing the Inode
+	multipush(R0,R1,R2,R3,R4,R9,R10);
+		R1 = 5;
+		R2 = counter;
+		R3 = [SYSTEM_STATUS_TABLE + 1];
+		
+		call MOD_0;
+	multipop(R0,R1,R2,R3,R4,R9,R10);
+	
+	R0 = count;
+	return;
+endif;
+
+if(R1 == 4) then
+
+	//Acquiring the Inode Index from the Open file table
+	alias Iindex R3;
+	alias Oindex R2;
+	alias OT R4;
+	OT = OPEN_FILE_TABLE + Oindex*4;
+	Iindex = [OT];
+	[OT + 1] = [OT + 1] - 1;
+	
+	if([OT + 1] == 0)then
+		[OT + 0] = -1;
+		[OT + 1] = -1;
+		[OT + 2] = -1;
+		if(Iindex != INODE_ROOT)then
+			alias FT R5;
+			R5 = FILE_STATUS_TABLE + Iindex*4 + 1;
+			[FT] = [FT] - 1;
+			if([FT] == 0) then
+				[FT] = -1;
+			endif; 
+		endif;
+	endif;
+	
+	return;
+endif;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

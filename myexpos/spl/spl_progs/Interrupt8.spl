@@ -1,5 +1,3 @@
-
-
 //Setting mode flag to system call number of fork 8
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 + 9] = 8;
 
@@ -98,24 +96,25 @@ else
 	
 	//child process shares the files and the semaphores opened by the parent process
 	
-	alias parentResTable R6;
-    alias childResTable R7;
+	alias PRTable R6;
+    alias CRTable R7;
     alias counter R8;
-    parentResTable = ([parentProcess + 11] + 1) * 512 - 16;
-    childResTable = ([childProcess + 11] + 1) * 512 - 16;
+    PRTable = ([parentProcess + 11] + 1) * 512 - 16;
+    CRTable = ([childProcess + 11] + 1) * 512 - 16;
 
     counter = 0;
     while(counter < 16) do
-        [childResTable + counter] = [parentResTable + counter];
-        [childResTable + counter + 1] = [parentResTable + counter + 1];
-        if([parentResTable + counter] == SEMAPHORE) then
+        [CRTable + counter] = [PRTable + counter];
+        [CRTable + counter + 1] = [PRTable + counter + 1];
+        if([PRTable + counter] == SEMAPHORE) then
             //if the resource held is a semaphore update the corresponding count field in the semaphore table
-            [SEMAPHORE_TABLE + 4 * [parentResTable + counter + 1] + 1] = [SEMAPHORE_TABLE + 4 * [parentResTable + counter + 1] + 1] + 1;
+            [SEMAPHORE_TABLE + 4 * [PRTable + counter + 1] + 1] = [SEMAPHORE_TABLE + 4 * [PRTable + counter + 1] + 1] + 1;
+        endif;
+        if([PRTable + counter] == FILE)then
+        	[OPEN_FILE_TABLE + 4 * [PRTable + counter + 1] + 1] = [OPEN_FILE_TABLE + 4 * [PRTable + counter + 1] + 1] + 1;
         endif;
         counter = counter + 2;
     endwhile;
-
-	
 
 	//copying per-process disk map table of parent to child
 	counter = 0;

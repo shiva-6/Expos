@@ -1,8 +1,7 @@
 alias functionNum R1;
 alias currentPID R2;
 
-
-//acquire disk
+//Acquire disk
 if(functionNum==3) then
 	while([DISK_STATUS_TABLE]==1) do
 		[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+4]=WAIT_DISK;
