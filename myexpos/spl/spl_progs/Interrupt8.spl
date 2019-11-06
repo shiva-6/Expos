@@ -1,14 +1,17 @@
-//Setting mode flag to system call number of fork 8
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 + 9] = 8;
 
-//saving the user Sp and switching to kernal stack
 alias userSP R1;
 userSP = SP;
-[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 + 13] = SP;
-SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 + 11]*512 - 1;
 
+alias PT R11;
+PT = PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16;
 
-//invoking Get Pcb Entry from process manager
+alias ret R12;
+ret = [PTBR + 2*((userSP - 1)/512)] * 512 + (userSP-1)%512;
+
+[PT + 13] = SP;
+SP = [PT + 11]*512 - 1;
+
 multipush(R1);
 R1 = 1;
 call MOD_1;
@@ -20,7 +23,7 @@ alias returnVal R0;
 if(returnVal == -1) then
 	//storing -1 as return value in stack
 	alias physicalAddrRetVal R2;
-	physicalAddrRetVal = ([PTBR + 2*((userSP - 1)/512)] * 512) + ((userSP-1)%512);
+	physicalAddrRetVal = [ret];
 	[physicalAddrRetVal] = -1;
 else
 	alias childPID R2;
@@ -68,7 +71,7 @@ else
 	[childProcess + 11] = returnVal;
 	
 	alias parentProcess R5;
-	parentProcess = PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16;
+	parentProcess = PT;
 
 	//*setting the process table of the child process
 
@@ -106,12 +109,15 @@ else
     while(counter < 16) do
         [CRTable + counter] = [PRTable + counter];
         [CRTable + counter + 1] = [PRTable + counter + 1];
+        alias semtable R13; 
+        alias opentable R14;
+        semtable = SEMAPHORE_TABLE + 4 * [PRTable + counter + 1] + 1;
+        opentable = OPEN_FILE_TABLE + 4 * [PRTable + counter + 1] + 1;
         if([PRTable + counter] == SEMAPHORE) then
-            //if the resource held is a semaphore update the corresponding count field in the semaphore table
-            [SEMAPHORE_TABLE + 4 * [PRTable + counter + 1] + 1] = [SEMAPHORE_TABLE + 4 * [PRTable + counter + 1] + 1] + 1;
+            [semtable] = [semtable] + 1;
         endif;
         if([PRTable + counter] == FILE)then
-        	[OPEN_FILE_TABLE + 4 * [PRTable + counter + 1] + 1] = [OPEN_FILE_TABLE + 4 * [PRTable + counter + 1] + 1] + 1;
+        	[opentable] = [opentable] + 1;
         endif;
         counter = counter + 2;
     endwhile;
@@ -169,12 +175,11 @@ else
 
 	
 	//return values in the user stacks of parent and child processes
-	[[PTBR + 2 * ((userSP - 1) / 512)] * 512 + (userSP - 1) % 512] = childPID;
+	[ret] = childPID;
     	[[childPTBR + 2 * ((userSP - 1) / 512)] * 512 + (userSP - 1) % 512] = 0;
 endif;
 
-//reseting the MODE FLAG of parent process and switching to user stack
-[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
-SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];
+[PT + 9] = 0;
+SP = [PT + 13];
 
 ireturn;

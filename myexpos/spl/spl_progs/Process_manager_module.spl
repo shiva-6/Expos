@@ -1,6 +1,6 @@
 alias functionnum R1;
 alias pid R2;
-alias upage R3;
+alias upageno R3;
 pid=[SYSTEM_STATUS_TABLE+1];
 upageno=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11];
 

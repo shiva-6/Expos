@@ -1,3 +1,54 @@
+if(R1 == 2) then
+	alias diskBlock R2;
+	alias offset R3;
+	alias memAddr R4;
+
+	alias bufferNum R5;
+	bufferNum = diskBlock%4;
+
+	multipush(R1,R2,R3,R4,R5);
+	R1 = 1;
+	R2 = bufferNum;
+	R3 = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_0;
+	multipop(R1,R2,R3,R4,R5);
+
+	if([BUFFER_TABLE + 4*bufferNum] != diskBlock) then
+		if([BUFFER_TABLE + 4*bufferNum + 1]==1) then
+			multipush(R1,R2,R3,R4,R5);
+			R1 = 1;
+			R2 = [SYSTEM_STATUS_TABLE + 1];
+			R3 = 71 + bufferNum;
+			R4 = [BUFFER_TABLE + 4*bufferNum];
+			call MOD_4;
+			multipop(R1,R2,R3,R4,R5);
+
+			[BUFFER_TABLE + 4*bufferNum + 1] = 0;
+		endif;
+
+		multipush(R1,R2,R3,R4,R5);
+		R1 = 2;
+		R3 = 71 + bufferNum;
+		R4 = diskBlock;
+		R2 = [SYSTEM_STATUS_TABLE + 1];
+		call MOD_4;
+		multipop(R1,R2,R3,R4,R5);
+
+		[BUFFER_TABLE + 4*bufferNum] = diskBlock;
+	endif;
+
+	[memAddr] = [(71 + bufferNum)*512 + offset];
+
+	multipush(R1,R2,R3,R4,R5);
+	R1 = 2;
+	R2 = bufferNum;
+	R3 = [SYSTEM_STATUS_TABLE + 1];
+	call MOD_0;
+	multipop(R1,R2,R3,R4,R5);
+
+	return;
+endif;
+
 if(R1 == 3) then
 	
 	//Finding the file in the Inode table
@@ -11,7 +62,7 @@ if(R1 == 3) then
 	endwhile;
 	
 	if(counter == MAX_FILE_NUM) then
-		R0 = -1
+		R0 = -1;
 		return;
 	endif;
 	
@@ -42,6 +93,7 @@ if(R1 == 3) then
 		multipop(R0,R1,R2,R3,R9);
 		
 		R0 = -1;
+		
 		return;
 	endif;
 
@@ -71,7 +123,7 @@ if(R1 == 3) then
 	//Updating open file table and file status table
 	alias OT R10;
 	OT = OPEN_FILE_TABLE + count*4;
-	if(R2 == root)then
+	if(R2 == "root")then
 		[OT + 0] = INODE_ROOT;
 	else
 		alias FT R11;

@@ -27,7 +27,7 @@ if(syscall == 2) then
 	alias fileid R2;
 	fileid = 0;
 	while(fileid < 8)do
-		if([pprt + fileid*2] == -1]) then
+		if([pprt + fileid*2] == -1) then
 			break;
 		endif;
 		fileid = fileid + 1;

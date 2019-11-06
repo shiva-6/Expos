@@ -1,6 +1,49 @@
 alias functionNum R1;
 alias currentPID R2;
 
+//Acquire Buffer
+if(functionNum == 1) then
+	alias BufferNo R2;
+	alias Pid R3;
+	
+	//Busy Wait for Acquiring Buffer
+	while([BUFFER_TABLE + 4*BufferNo + 2] != -1)do
+		[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+4]=WAIT_BUFFER;
+		[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+5]=BufferNo;
+		multipush(R0,R1,R2,R3);
+		call MOD_5;
+		multipop(R0,R1,R2,R3);
+	endwhile;
+
+	[BUFFER_TABLE + 4*BufferNo + 2] = Pid;
+	return;
+endif;	
+
+//Release Buffer
+if(functionNum == 2) then
+	alias BufferNo R2;
+	alias Pid R3;
+	
+	if(Pid != [BUFFER_TABLE + 4*BufferNo + 2])then
+		R0 = -1;
+		return;
+	endif;
+	
+	[BUFFER_TABLE + 4*BufferNo + 2] = -1;
+	
+	alias counter R4;
+	counter = 0;
+	while(counter < MAX_PROC_NUM)do
+		if( ([PROCESS_TABLE + counter*16 + 4] == WAIT_BUFFER) && ([PROCESS_TABLE + counter*16 + 5] == BufferNo )) then
+			[PROCESS_TABLE + counter*16 + 4] = READY;	
+		endif;
+		counter = counter + 1;
+	endwhile;
+	
+	R0 = 0;
+	return;
+endif;
+
 //Acquire disk
 if(functionNum==3) then
 	while([DISK_STATUS_TABLE]==1) do
