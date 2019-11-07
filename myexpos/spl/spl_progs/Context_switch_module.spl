@@ -18,6 +18,113 @@ if(newPID == 16) then
 newPID = 1;
 endif;
 
+//Checking for the deadlocks
+alias DEADLOCKED_PROC R11;
+alias SEEN_PROC R12;
+DEADLOCKED_PROC = 75*512;
+SEEN_PROC = 75*512 + 16;
+alias DeadLocked R10;
+alias Seen R9;
+DeadLocked = 75*512 + 32;
+Seen = 0;
+//print [DeadLocked];
+
+alias Cur_Proc R13;
+Cur_Proc = 0;
+while(Cur_Proc < MAX_PROC_NUM) do
+	if([PROCESS_TABLE + Cur_Proc*16 + 4] == WAIT_PROCESS) then
+		alias j R14;
+		j = 0;
+		
+		//checking whether the current process is already deadlocked or not
+		while(j < MAX_PROC_NUM) do
+			if([DEADLOCKED_PROC + j] == Cur_Proc)then
+				break;
+			endif;
+			j = j + 1;
+		endwhile;
+		
+		if(j == MAX_PROC_NUM) then
+			
+			alias Cur R8;
+			Cur = Cur_Proc;
+			//loop until we made sure it is not a dead lock process
+			while(1 == 1) do
+				Seen = 0;
+				j = 0;
+				while(j < MAX_PROC_NUM)do
+					if([SEEN_PROC + j] == Cur)then
+						break;
+					endif;
+					j = j + 1;
+				endwhile;
+				
+				if(j != MAX_PROC_NUM) then
+					//print "came";
+					alias proc_in_loop R15;
+					proc_in_loop = 0;
+					while([SEEN_PROC + proc_in_loop] > 0) do
+						[DEADLOCKED_PROC + [DeadLocked]] = [SEEN_PROC + proc_in_loop];
+						print [DEADLOCKED_PROC + [DeadLocked]];
+						[DeadLocked] = [DeadLocked] + 1;
+						[SEEN_PROC + proc_in_loop] = -1;
+						proc_in_loop = proc_in_loop + 1;
+					endwhile;
+					Seen = 0;
+					break;
+					
+				else
+				
+					//If the current process is in deadlock in our loop
+					j = 0;
+					while(j < MAX_PROC_NUM) do
+						if([DEADLOCKED_PROC + j] == Cur)then
+							break;
+						endif;
+						j = j + 1;
+					endwhile;
+					
+					if(j != MAX_PROC_NUM) then
+						//print "came";
+						alias proc_in_loop R15;
+						proc_in_loop = 0;
+						while([SEEN_PROC + proc_in_loop] > 0) do
+							[DEADLOCKED_PROC + [DeadLocked]] = [SEEN_PROC + proc_in_loop];
+							print [DEADLOCKED_PROC + [DeadLocked]];
+							[SEEN_PROC + proc_in_loop] = -1;
+							[DeadLocked] = [DeadLocked] + 1;
+							proc_in_loop = proc_in_loop + 1;
+						endwhile;
+						Seen = 0;
+						break;
+					endif;
+					
+					//If not update seen table
+					[SEEN_PROC + Seen] = Cur;
+					Seen = Seen + 1;
+				endif;
+				
+				if([PROCESS_TABLE + Cur*16 + 4] != WAIT_PROCESS) then
+					j = 0;
+					while([SEEN_PROC + j] > 0) do
+						[SEEN_PROC + j] = -1;
+						j = j + 1;
+					endwhile;
+					Seen = 0;
+					break;
+				endif;
+				
+				Cur = [PROCESS_TABLE + Cur*16 + 5];
+						
+			endwhile;
+		endif;
+		
+	endif;
+	Cur_Proc = Cur_Proc + 1;
+endwhile;
+
+//print [DeadLocked];
+
 alias counter R8;
 counter = 0;
 

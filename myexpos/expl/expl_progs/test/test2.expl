@@ -1,0 +1,61 @@
+int main()
+{
+	decl
+	    int temp, ppid, pid1, pid2, pid3, pid4, a;
+	    string input;
+	enddecl
+	begin
+		ppid = exposcall("Getpid");
+		pid1 = exposcall("Fork");
+		if(pid1 < 0) then
+			temp = exposcall("Write",-2, "pid1 Failed");
+		else
+			if(pid1 != 0) then
+				// Parent is waiting for pid1
+				temp = exposcall("Write", -2, "pp waits p1");
+				temp = exposcall("Wait", pid1);
+			else
+				// This is pid1 process. 
+				pid2 = exposcall("Fork");
+				if(pid2 < 0) then
+					temp = exposcall("Write",-2, "pid2 Failed");
+				else
+					if(pid2 != 0) then
+						// pid1 is waiting for pid2
+						temp = exposcall("Write", -2, "p1 waits p2");
+						temp = exposcall("Wait", pid2);
+					else
+						// This is pid2 process. 
+						pid3 = exposcall("Fork");
+						if(pid3 < 0) then
+							temp = exposcall("Write",-2, "pid3 Failed");
+						else
+							if(pid3 != 0) then
+								// pid2 is waiting for pid3
+								temp = exposcall("Write", -2, "p2 waits p3");
+								temp = exposcall("Wait", pid3);
+							else
+								// pid3 creates pid4, and waits for pid1
+								// pid4 will run infinite loop
+								pid4 = exposcall("Fork");
+								if(pid4 < 0) then
+									temp = exposcall("Write",-2, "pid4 Failed");
+								else
+									if (pid4 != 0) then
+										temp = exposcall("Write", -2, "p3 waits p4");
+										temp = exposcall("Wait", pid4);
+									else
+										// pid4 is in wait loop
+										temp = exposcall("Write", -2, "p4 waits pp");
+										temp = exposcall("Wait", ppid);
+									endif;
+								endif;
+							endif; 
+						endif; //pid3-pid4
+					endif; // pid2-pid3
+				endif; // pid1-pid2
+			endif;  // parent-pid1
+		endif;
+		return 0;
+	end
+}

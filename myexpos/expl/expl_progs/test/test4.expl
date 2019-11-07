@@ -1,0 +1,41 @@
+int main()
+{
+	decl
+	    int temp, ppid, pid1, pid2, pid3, pid4, a;
+	    string input;
+	enddecl
+	begin
+		ppid = exposcall("Getpid");
+		pid1 = exposcall("Fork");
+		if (pid1 == 0) then
+			temp = exposcall("Write", -2, "p1 waits pp");
+			temp = exposcall("Wait", ppid);
+			temp = exposcall("Write", -2, "p1 terminates");
+		endif;
+		pid2 = exposcall("Fork");
+		if (pid2 == 0) then
+			pid3 = exposcall("Fork");
+			if (pid3 == 0) then
+				temp = exposcall("Write", -2, "p3 loops");
+				a = 0;
+				while (a == 0) do
+					a = 0;
+				endwhile;
+				temp = exposcall("Write", -2, "p3 terminates");
+			endif;
+			pid4 = exposcall("Fork");
+			if (pid4 == 0) then
+				temp = exposcall("Write", -2, "p4 waits p1");
+				temp = exposcall("Wait", pid1);
+				temp = exposcall("Write", -2, "p4 terminates");
+			endif;	
+			temp = exposcall("Write", -2, "p2 waits p4");
+			temp = exposcall("Wait", pid4);
+			temp = exposcall("Write", -2, "p2 terminates");
+		endif;
+		temp = exposcall("Write", -2, "pp waits p2");
+		temp = exposcall("Wait", pid2);
+		temp = exposcall("Write", -2, "pp terminates");
+	return 0;
+	end
+}
