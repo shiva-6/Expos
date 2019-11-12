@@ -1,108 +1,362 @@
-alias PT R10;
-PT = PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16;
+//PreProcessing
 
-[PT + 13] = SP;
-SP=[PT + 11]*512-1;
+alias Process_Table R10;
+
+Process_Table = PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16;
+
+
+[Process_Table + 13] = SP;
+
+SP=[Process_Table + 11]*512-1;
+
 
 alias userSP R8;
-userSP=[PT + 13];
+
+userSP=[Process_Table + 13];
+
 
 alias ret R11;
+
 ret = [PTBR + 2*((userSP-1)/512)]*512 + (userSP-1)%512;
 
+
 alias syscall R9;
+
 syscall=[[PTBR+((userSP-5)/512)*2]*512+(userSP-5)%512];
 
+
 if(syscall == 2) then
+
 	//Setting mode flag
-	[PT + 9] = 2;
+
+	[Process_Table + 9] = 2;
 	
 	//FileName
+
 	alias filename R1;
+
 	filename = [[PTBR + 2*((userSP-4)/512)]*512 + (userSP-4)%512];
-	
+
+
 	//Finding a free slot in per process resource table
+
 	alias pprt R0;
-	pprt = [PT + 11]*512 + 496;
+
+	pprt = [Process_Table + 11]*512 + 496;
+
 	alias fileid R2;
+
 	fileid = 0;
+
 	while(fileid < 8)do
+
 		if([pprt + fileid*2] == -1) then
+
 			break;
+
 		endif;
+
 		fileid = fileid + 1;
+
 	endwhile;
-	
+
+
 	//If there is no free resource table entry return -3
+
 	if(fileid == 8) then
+
 		[ret] = -3;
-		SP = [PT + 13];
-		[PT + 9] = 0;
+
+		SP = [Process_Table + 13];
+
+		[Process_Table + 9] = 0;
+
 		ireturn;
+
 	endif;
 	
+
 	//Requesting for Open file table entry If possible
+
 	multipush(R0,R1,R2,R8,R9,R10,R11);
+
 		R2 = R1;
+
 		R1 = 3;
+
 		call MOD_3;
+
 		alias Retval R4;
+
 		Retval = R0;
+
 	multipop(R0,R1,R2,R8,R9,R10,R11);
 	
+
 	//If open fails return error code
+
 	if(Retval < 0) then
+
 		[ret] = Retval;
-		SP = [PT + 13];
-		[PT + 9] = 0;
+
+		SP = [Process_Table + 13];
+
+		[Process_Table + 9] = 0;
+
 		ireturn;
+
 	endif;
 	
+
 	//Setting per process resource table
+
 	[pprt + fileid*2]     = 0;
+
 	[pprt + fileid*2 + 1] = Retval;
-		
-	//Returning the file descriptor
+
+	//Returning the file descriProcess_Tableor
+	
 	[ret] = fileid;
 	
 endif;
 
+
 if(syscall == 3) then
+
 	//Setting mode flag
-	[PT + 9] = 3;
+
+	[Process_Table + 9] = 3;
 	
 	//per process resource table entry starting point
+
 	alias pprt R0;
-	pprt = [PT + 11]*512 + 496;
-	
-	//Obtainig file descriptor and checks whether it is invalid and also checks whether resource identifier is valid
+
+	pprt = [Process_Table + 11]*512 + 496;
+
+
+	//Obtainig file descriProcess_Tableor and checks whether it is invalid and also checks whether resource identifier is valid
+
 	alias fileid R1;
+
 	fileid = [[PTBR + 2*((userSP-4)/512)]*512 + (userSP-4)%512];
+
 	if((fileid < 0) || (fileid > 7) ||	([pprt + fileid*2] != 0)) then
+
 		[ret] = -1;
-		SP = [PT + 13];
-		[PT + 9] = 0;
+
+		SP = [Process_Table + 13];
+
+		[Process_Table + 9] = 0;
+
 		ireturn;
+
 	endif;
-	
+
+
+
 	//Obtaining open file index
+
 	alias openfid R2;
+
 	openfid = [pprt + 2*fileid + 1];
 	
+
 	//Calling close function of file manager module
+
 	multipush(R0,R1,R2,R8,R9,R10,R11);
+
 		R1 = 4;
+
 		call MOD_3;
+
 	multipop(R0,R1,R2,R8,R9,R10,R11);
-	
+
+
 	//Invalidating per process resource table entry
+
 	[pprt + 2*fileid] = -1;
-	
+
+
 	//return value
+
 	[ret] = 0;
 	
 endif;
 
-SP 		 = [PT + 13];
-[PT + 9] = 0;
+
+//Seek System call
+
+if(syscall == 6) then
+
+	[Process_Table + 9] = 6;
+
+	alias File_Descriptor R0;
+
+	File_Descriptor = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP - 4)%512];
+
+
+	//Invalid File descriptor
+
+	if(File_Descriptor < 0  ||  File_Descriptor > 7) then
+
+		SP = [Process_Table + 13];
+
+		[Process_Table + 9] = 0;
+
+		[ret] = -1;
+
+		ireturn;
+
+	endif;
+
+
+	//Locating Per process resource table
+
+	alias Per_Proc_ResTble R1;
+
+	Per_Proc_ResTble = [Process_Table + 11]*512 + 496;
+
+	
+	//If the Resource Identifier field is invalid
+
+	if([Per_Proc_ResTble + 2*File_Descriptor] != FILE) then
+
+    	SP = [Process_Table + 13];
+
+    	[Process_Table + 9] = 0;
+
+    	[ret] = -1;
+
+    	ireturn;
+ 
+	endif;
+
+
+	//Acquiring Openfile Index
+
+	alias Openfile_Index R2;
+
+	Openfile_Index = [Per_Proc_ResTble + 2*File_Descriptor + 1];
+
+
+	//Acquiring Inode table Index
+
+	alias Inodetable_Index R3;
+
+	Inodetable_Index = [OPEN_FILE_TABLE + 4*Openfile_Index];
+
+
+	//Acquiring Inode 
+
+	multipush(R0,R1,R2,R3);
+
+	R1 = 4;
+
+	R2 = Inodetable_Index;
+
+	R3 = [SYSTEM_STATUS_TABLE + 1];
+
+	call MOD_0;
+
+	if(R0 == -1) then
+
+		SP = [Process_Table + 13];
+
+		[Process_Table + 9] = 0;
+
+		[ret] = -1;
+
+		ireturn;
+
+	endif;
+
+	multipop(R0,R1,R2,R3);
+
+
+	//Obtaining Lseek value
+
+	alias Lseek R4;
+
+	Lseek = [OPEN_FILE_TABLE + Openfile_Index*4 + 2];
+
+
+	//Checking the validity of given offset
+
+	alias Offset R5;
+
+	Offset = [[PTBR + 2*(userSP - 3)/512]*512 + (userSP - 3)%512];
+
+	alias File_size R6;
+
+	if([OPEN_FILE_TABLE + Openfile_Index*4] == INODE_ROOT) then
+
+		File_size = 480;
+
+	else
+
+		File_size = [INODE_TABLE + Inodetable_Index*16 + 2];
+
+	endif;
+
+
+	//if offset is out of range
+
+	if(Lseek + Offset  <  0) then
+
+		SP = [Process_Table + 13];
+
+		[Process_Table + 9] = 0;
+
+		[ret] = -2;
+
+		ireturn; 
+
+	endif;
+
+
+	//Doing things
+
+	alias Temp_Opentable R7;
+
+	Temp_Opentable = OPEN_FILE_TABLE + Openfile_Index*16 + 2;
+
+	if(Offset == 0) then
+
+		[Temp_Opentable] = 0;
+
+	endif;
+
+	if(Lseek + Offset > [INODE_TABLE + Inodetable_Index*16 + 2]) then
+
+		[Temp_Opentable] = [INODE_TABLE + Inodetable_Index*16 + 2];
+
+	else
+
+		[Temp_Opentable] = Lseek + Offset;
+
+	endif;
+
+
+	//Releasing Inode
+
+	multipush(R0,R1,R2,R3,R4,R5);
+
+	R1 = 5;
+
+	R2 = Inodetable_Index;
+
+	R3 = [SYSTEM_STATUS_TABLE + 1];
+
+	call MOD_0;
+
+	multipop(R0,R1,R2,R3,R4,R5);
+
+	[ret] = 0;
+
+endif;
+
+SP = [Process_Table + 13];
+
+[Process_Table + 9] = 0;
+
 ireturn;

@@ -41,7 +41,7 @@ if(File_Descriptor == -2) then
 
     [Process_Table + 9] = 0;
 
-    Return_val = 0;
+    [Return_val] = 0;
 
     ireturn;
 
@@ -56,7 +56,7 @@ if(File_Descriptor < 0  ||  File_Descriptor > 7) then
 
     [Process_Table + 9] = 0;
 
-    Return_val = -1;
+    [Return_val] = -1;
 
     ireturn;
 
@@ -78,7 +78,7 @@ if([Per_Proc_ResTble + 2*File_Descriptor] != FILE) then
 
     [Process_Table + 9] = 0;
 
-    Return_val = -1;
+    [Return_val] = -1;
 
     ireturn;
  
@@ -103,11 +103,11 @@ Inodetable_Index = [OPEN_FILE_TABLE + 4*Openfile_Index];
 
 if(([Process_Table + 3] != 1)  &&  ([INODE_TABLE + Inodetable_Index*16 + 3] != [Process_Table + 3])  &&  ([INODE_TABLE + Inodetable_Index*16 + 4] == 0)) then
 
-    SP = UserSP;
+    SP = [Process_Table + 13];
 
     [Process_Table + 9] = 0;
 
-    Return_val = -3;
+    [Return_val] = -3;
 
     ireturn;
 
@@ -132,7 +132,7 @@ if(R0 == -1) then
 
     [Process_Table + 9] = 0;
 
-    Return_val = -1;
+    [Return_val] = -1;
 
     ireturn;
 
@@ -165,7 +165,7 @@ if(Lseek == MAX_FILE_SIZE) then
 
     [Process_Table + 9] = 0;
 
-    Return_val = -2;
+    [Return_val] = -2;
 
     ireturn;
 
@@ -174,7 +174,7 @@ endif;
 
 //If lseek if multiple of 512 and its size didnt overshoot 
 
-if(Lseek%512 == 0  &&  [Temp_Inode] == Lseek) then
+if(Lseek%512 == 0  &&  [INODE_TABLE + Inodetable_Index*16 + 2] == Lseek) then
 
     multipush(R0,R1,R2,R3);
 
@@ -200,7 +200,7 @@ if(Lseek%512 == 0  &&  [Temp_Inode] == Lseek) then
 
         [Process_Table + 9] = 0;
 
-        Return_val = -2;
+        [Return_val] = -2;
 
         ireturn;
 
@@ -278,6 +278,6 @@ SP = [Process_Table + 13];
 
 [Process_Table + 9] = 0;
 
-Return_val = 0;
+[Return_val] = 0;
 
 ireturn;
