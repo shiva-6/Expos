@@ -63,6 +63,6 @@ PTBR=PAGE_TABLE_BASE;
 [PROCESS_TABLE+15]=PTLR;
 
 SP=8*512;
+
+breakpoint;
 ireturn;
-
-

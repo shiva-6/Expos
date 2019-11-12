@@ -197,6 +197,8 @@ endwhile;
 
 //print [DeadLocked];
 
+breakpoint;
+
 alias currentPID R0;
 currentPID = [SYSTEM_STATUS_TABLE + 1];
 

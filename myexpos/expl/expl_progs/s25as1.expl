@@ -1,0 +1,36 @@
+decl
+    int temp1, temp2, temp3, temp4, fileid, num, Permission, a;
+    string filename;
+enddecl
+
+int main()
+{
+begin
+    temp1 = exposcall("Read", -1, filename);
+    temp2 = exposcall("Read", -1, Permission);
+
+    temp3 = exposcall("Create", filename, Permission);
+    
+    a = 1;
+    fileid = exposcall("Open", filename);
+    while(a <= 1100)  do
+
+        temp4  = exposcall("Write", fileid, a);
+    
+    endwhile;
+
+    a = 0;
+    temp1 = exposcall("Seek", fileid, 4000);
+    while(a == 0) do
+
+        a = exposcall("Seek", fileid, -1);
+        temp2 = exposcall("Read", fileid, num);
+        temp3 = exposcall("Write", -2, num);
+        
+    endwhile;
+
+    temp1 = exposcall("Close", fileid);
+    
+    return 0;
+end
+}
