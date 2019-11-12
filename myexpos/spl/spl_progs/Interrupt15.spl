@@ -1,53 +1,151 @@
-alias PT R10;
-PT = PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16;
+alias Process_Table R0;
 
-[PT + 13] = SP;
-SP=[PT + 11]*512-1;
+Process_Table = PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16;
 
-alias userSP R8;
-userSP=[PT + 13];
 
-alias syscall R9;
-syscall=[[PTBR+((userSP-5)/512)*2]*512+(userSP-5)%512];
+[Process_Table + 13] = SP;
 
-if(syscall == 21) then
-	if(([SYSTEM_STATUS_TABLE + 1] != 1) || ([PT + 3] != 1))then
-		[[PTBR+((userSP-1)/512)*2]*512+(userSP-1)%512] = -1;
-		SP = [PT + 13];
-		[PT + 9] = 0;
-		ireturn;
-	endif;
-	
-	multipush(R8,R9,R10);
-		R1 = 1;
-		R2 = [SYSTEM_STATUS_TABLE + 1];
-		R3 = 59;
-		R4 = 3;
-		
-		call MOD_4;
-		
-		R1 = 1;
-		R2 = [SYSTEM_STATUS_TABLE + 1];
-		R3 = 60;
-		R4 = 4;
-		
-		call MOD_4;
-		
-		R1 = 1;
-		R2 = [SYSTEM_STATUS_TABLE + 1];
-		R3 = 62;
-		R4 = 5;
-		
-		call MOD_4;
-		
-		R1 = 1;
-		R2 = [SYSTEM_STATUS_TABLE + 1];
-		R3 = 61;
-		R4 = 2;
-		
-		call MOD_4;
-		
-	multipop(R8,R9,R10);
+SP=[Process_Table + 11]*512-1;
 
-	halt;
+
+alias userSP R1;
+
+userSP = [Process_Table + 13];
+
+[Process_Table + 9] = 21;
+
+
+alias Return_val R2;
+
+Return_val = [PTBR + 2*(userSP - 1)/512]*512 + (userSP - 1)%512;
+
+
+//If the current process is not shell
+
+if([SYSTEM_STATUS_TABLE + 1] != 2) then
+
+	SP = [Process_Table + 13];
+
+	[Process_Table + 9] = 0;
+
+	[Return_val] = -1;
+
+	ireturn;
+
 endif;
+
+
+//If the user is not the root
+
+if([Process_Table + 3] != 1) then
+
+	SP = [Process_Table + 13];
+
+	[Process_Table + 9] = 0;
+
+	[Return_val] = -1;
+
+	ireturn;	
+
+endif;
+
+
+//Calling kill all function in Process manager
+
+multipush(R0,R1,R2);
+
+R1 = 5;										//function number
+
+R2 = [SYSTEM_STATUS_TABLE + 1];				//pid of current process
+
+call MOD_1;
+
+multipop(R0,R1,R2);
+
+
+//Storing the dirty bits into the disk
+
+alias counter R3;
+
+counter = 0;
+
+while(counter < 4) do
+
+	if([BUFFER_TABLE + counter*4 + 1] == 1) then
+
+		multipush(R0,R1,R2,R3);
+
+			R1 = 1;													//Function number
+
+			R2 = [SYSTEM_STATUS_TABLE + 1];							//pid
+
+			R3 = 71 + counter;										//page number
+
+			R4 = [BUFFER_TABLE + counter*4];						//block number
+
+		multipop(R0,R1,R2,R3);
+
+	endif;
+
+	counter = counter + 1;
+
+endwhile;
+
+
+//commiting inode table, Root file, User Table, Disk free List into Disk
+
+multipush(R0,R1,R2,R3);
+
+//Storing Inode table and user table
+
+R1 = 1;
+
+R2 = [SYSTEM_STATUS_TABLE + 1];
+
+R3 = 59;
+
+R4 = 3;
+	
+call MOD_4;
+
+
+
+R1 = 1;
+
+R2 = [SYSTEM_STATUS_TABLE + 1];
+
+R3 = 60;
+
+R4 = 4;
+		
+call MOD_4;
+
+
+//Storing Root file
+
+R1 = 1;
+
+R2 = [SYSTEM_STATUS_TABLE + 1];
+
+R3 = 62;
+
+R4 = 5;
+		
+call MOD_4;
+
+
+//Storing Disk Free List
+
+R1 = 1;
+
+R2 = [SYSTEM_STATUS_TABLE + 1];
+
+R3 = 61;
+
+R4 = 2;
+	
+call MOD_4;
+		
+multipop(R0,R1,R2,R3);
+
+halt;
