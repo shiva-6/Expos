@@ -16,6 +16,8 @@ begin
     while(a <= 1100)  do
 
         temp4  = exposcall("Write", fileid, a);
+
+        a=a+1;
     
     endwhile;
 

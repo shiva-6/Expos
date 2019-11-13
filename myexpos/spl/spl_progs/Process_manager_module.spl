@@ -1,8 +1,10 @@
 alias functionnum R1;
 alias pid R2;
-alias upageno R3;
+alias upage R3;
 pid=[SYSTEM_STATUS_TABLE+1];
-upageno=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11];
+alias pcb R9;
+pcb =  PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16;
+upage=[pcb+11];
 
 if(functionnum == 1) then
 	alias counter R2;
@@ -26,11 +28,10 @@ endif;
 if(functionnum ==2) then
 	alias counter R4;
 	alias pprt R5;
-	pprt=upageno*512 + 496;
+	pprt=[pcb+11]*512 + 496;
 	counter=0;
-	
-	while(counter < 8) do
-		if( ([pprt+counter*2]==SEMAPHORE) && ([pprt+counter*2+1]!=-1)) then
+	while(counter<8) do
+		if( ([pprt+counter*2]== SEMAPHORE) && ([pprt+counter*2+1]!=-1)) then
 			R6=R4;			
 			multipush(R0,R1,R2,R3,R4,R5);
 			R1=7;
@@ -39,21 +40,21 @@ if(functionnum ==2) then
 			call MOD_0;
 			multipop(R0,R1,R2,R3,R4,R5);
 		endif;
-		if([pprt + counter*2]==FILE) then		
+		if( [pprt + counter*2] == FILE) then
+		
 			multipush(R0,R1,R2,R3,R4,R5);
-				R1 = 4;
-				R2 = [pprt + counter*2 + 1];
-				call MOD_3;
+			R1 = 4;
+			R2 = [pprt + counter * 2 + 1];
+			call MOD_3;
 			multipop(R0,R1,R2,R3,R4,R5);
 		endif;
 		counter=counter+1;
 	endwhile;
-	
 	multipush(R1,R2,R3);
 	alias funnum R1;
 	funnum = 2;
 	alias page R2;
-	page=upageno;
+	page=upage;
 	call MOD_2;
 	multipop(R1,R2,R3);
 	return;
@@ -73,7 +74,7 @@ if(functionnum==3) then
 	multipop(R1,R2,R3);
 	pid=[SYSTEM_STATUS_TABLE+1];
 	[PROCESS_TABLE+pid*16+4]=TERMINATED;
-	if([PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]!=9) then
+	if([pcb+9]!=9) then
 		alias counter R10;
 		counter=0;
 		while(counter < 16) do
@@ -92,19 +93,19 @@ endif;
 
 
 if(functionnum == 4) then	
-	[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+0] = -1;
-	[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+1] = "0000";
-	[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+2] = -1;
-	[PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+3] = "0000";
+	[PTBR*20+0] = -1;
+	[PTBR*20+1] = "0000";
+	[PTBR*20+2] = -1;
+	[PTBR*20+3] = "0000";
 	alias counter R4;
 	counter=2;
 	while(counter<10) do
-		if([PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+counter*2]!=-1) then
+		if([PTBR*20+counter*2]!=-1) then
 			multipush(R1,R2,R3,R4);
 			alias funcnum R1;
 			alias pageno R2;
 			funcnum = 2;
-			pageno = [PAGE_TABLE_BASE+[SYSTEM_STATUS_TABLE+1]*20+counter*2];
+			pageno = [PTBR*20+counter*2];
 			call MOD_2;
 			multipop(R1,R2,R3,R4);
 		endif;
@@ -139,4 +140,42 @@ if(functionnum == 4) then
 	return;
 endif;
 
+if(functionnum == 5) then
+	alias pid R2;
+	alias counter R3;
+	counter = 0;
+	while(counter < 60) do
+		if([INODE_TABLE + counter*16 + 1] != -1) then
+			multipush(R1, R2, R3, R9);
+				R1 = 4;
+				R2 = counter;
+				R3 = [SYSTEM_STATUS_TABLE + 1];
+			multipop(R1, R2, R3, R9);
+		endif;
+		counter = counter + 1;
+	endwhile;
 
+	counter = 2;
+	while(counter < MAX_PROC_NUM) do
+		if(counter !=pid && [PROCESS_TABLE + counter*16 + 4] != TERMINATED) then
+			multipush(R1, R2, R3, R9);
+				R1 = 3;
+				R2 = counter;
+			multipop(R1, R2, R3, R9);
+		endif;
+		counter = counter + 1;
+	endwhile;
+
+	counter = 0;
+	while(counter < 60) do
+		if([INODE_TABLE + counter*16 + 1] != -1) then
+			multipush(R1, R2, R3, R9);
+				R1 = 5;
+				R2 = counter;
+				R3 = [SYSTEM_STATUS_TABLE + 1];
+			multipop(R1, R2, R3, R9);
+		endif;
+		counter = counter + 1;
+	endwhile;
+	return;
+endif;

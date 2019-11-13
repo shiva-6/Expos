@@ -18,7 +18,7 @@ UserSP = [Process_Table + 13];
 
 alias File_Descriptor R2;
 
-File_Descriptor = [PTBR + 2*(UserSP - 4)/512]*512 + (UserSP - 4)%512;
+File_Descriptor = [[PTBR + 2*(UserSP - 4)/512]*512 + (UserSP - 4)%512];
 
 alias Return_val R3;
 

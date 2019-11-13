@@ -1,17 +1,17 @@
-alias currentPID R0;
+alias currentPID R5;
 currentPID = [SYSTEM_STATUS_TABLE + 1];
 
 //SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
 multipush(BP);
 
-alias process_table_entry R1;
+alias process_table_entry R6;
 process_table_entry = PROCESS_TABLE + currentPID * 16;
 
 [process_table_entry + 12] = SP % 512;
 [process_table_entry + 14] = PTBR;
 [process_table_entry + 15] = PTLR;
 
-alias newPID R2;
+alias newPID R7;
 
 newPID = currentPID +1;
 if(newPID == 16) then
