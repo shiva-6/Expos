@@ -22,7 +22,7 @@ Return_val = [PTBR + 2*(userSP - 1)/512]*512 + (userSP - 1)%512;
 
 //If the current process is not shell
 
-if([SYSTEM_STATUS_TABLE + 1] != 2) then
+if([SYSTEM_STATUS_TABLE + 1] != 1) then
 
 	SP = [Process_Table + 13];
 

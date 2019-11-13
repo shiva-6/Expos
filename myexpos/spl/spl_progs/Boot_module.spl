@@ -218,13 +218,13 @@ while(i < MAX_OPENFILE_NUM) do
 	i = i + 1;
 endwhile;
 
-i=0;
-while(i < 32) do
-	[75*512 + i] = -1;
-	i = i + 1;
-endwhile;
+// i=0;
+// while(i < 32) do
+// 	[75*512 + i] = -1;
+// 	i = i + 1;
+// endwhile;
 
-[75*512 + 32] = 0;
+// [75*512 + 32] = 0;
 
 return;
 
