@@ -1,38 +1,43 @@
-decl
-    int temp1, temp2, temp3, temp4, fileid, num, Permission, a;
-    string filename;
-enddecl
-
 int main()
 {
-begin
-    temp1 = exposcall("Read", -1, filename);
-    temp2 = exposcall("Read", -1, Permission);
+	decl
+		int tmp,i,fileDesc;
+		str fileName, mystr, word;
+	enddecl
 
-    temp3 = exposcall("Create", filename, Permission);
-    
-    a = 1;
-    fileid = exposcall("Open", filename);
-    while(a <= 1100)  do
+	begin
+		mystr = "fileName";
+		tmp = exposcall("Write",-2,mystr);
+		tmp = exposcall("Read",-1,fileName);
+		tmp = exposcall("Create",fileName,1);
+		fileDesc = exposcall("Open",fileName);
 
-        temp4  = exposcall("Write", fileid, a);
-
-        a=a+1;
-    
-    endwhile;
-
-    a = 0;
-    temp1 = exposcall("Seek", fileid, 4000);
-    while(a == 0) do
-
-        a = exposcall("Seek", fileid, -1);
-        temp2 = exposcall("Read", fileid, num);
-        temp3 = exposcall("Write", -2, num);
+		i = 1;
+        tmp = exposcall("Write", -2, i);
+		while(i<=10) do
+			tmp = exposcall("Write",fileDesc,i);
+			i = i + 1;
+		endwhile;
         
-    endwhile;
+		tmp = exposcall("Seek",fileDesc,2048);
+		tmp = exposcall("Seek",fileDesc,-1);
+		while(1 == 1) do
+			tmp = exposcall("Read",fileDesc,word);
+			if(tmp == -2) then
+				break;
+			endif;
 
-    temp1 = exposcall("Close", fileid);
-    
-    return 0;
-end
+			tmp = exposcall("Write",-2,word);
+
+			tmp = exposcall("Seek",fileDesc,-2);
+			if(tmp == -2) then
+				break;
+			endif;
+		endwhile;
+
+		tmp = exposcall("Close",fileDesc);
+
+		return 0;
+	end
 }
+

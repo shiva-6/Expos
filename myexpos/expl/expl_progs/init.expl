@@ -8,17 +8,22 @@ begin
     a=1;
     while(a == 1) do
         temp = exposcall("Write",-2,"---Enter---");
+        
         temp = exposcall("Read",-1, input);
+        
         if(input != "Shutdown") then
             pid = exposcall("Fork");
+            
             if(pid < 0) then
                 temp = exposcall("Write",-2, "Fork Failure");
                 continue;
             endif;
             if(pid != 0) then
                 temp = exposcall("Wait",pid);
+                //temp = exposcall("Write", -2, "haa ra");
             else
                 temp = exposcall("Exec",input);
+                //lstemp = exposcall("Write", -2, "haa ra 2");
                 if(temp != 0) then
                     temp = exposcall("Write",-2, "BAD COMMAND");
                     break;

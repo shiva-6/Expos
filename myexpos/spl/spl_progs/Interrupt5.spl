@@ -279,12 +279,13 @@ if(syscall == 6) then
 
 	Lseek = [OPEN_FILE_TABLE + Openfile_Index*4 + 2];
 
-
+	//print Lseek;
 	//Checking the validity of given offset
 
 	alias Offset R5;
 
 	Offset = [[PTBR + 2*(userSP - 3)/512]*512 + (userSP - 3)%512];
+	//print Offset;
 
 	alias File_size R6;
 
@@ -339,7 +340,7 @@ if(syscall == 6) then
 
 	//Releasing Inode
 
-	multipush(R0,R1,R2,R3,R4,R5);
+	multipush(R0,R1,R2,R3,R4,R5,R6,R7);
 
 	R1 = 5;
 
@@ -349,7 +350,7 @@ if(syscall == 6) then
 
 	call MOD_0;
 
-	multipop(R0,R1,R2,R3,R4,R5);
+	multipop(R0,R1,R2,R3,R4,R5,R6,R7);
 
 	[ret] = 0;
 

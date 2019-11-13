@@ -4,6 +4,7 @@ int main(){
 	enddecl
 	begin
 		while(1==1)do
+			//a=exposcall("Write", -2, "yeah im on it");
 			a=1;
 		endwhile;
 		return 0;

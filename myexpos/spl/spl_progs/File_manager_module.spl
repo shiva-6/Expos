@@ -76,6 +76,8 @@ if(R1 == 1) then
 
 	[(71 + BufferNum)*512 + Offset] = Word;
 
+	//print Word;
+
 	[BUFFER_TABLE + 4*BufferNum + 1] = 1;
 
 

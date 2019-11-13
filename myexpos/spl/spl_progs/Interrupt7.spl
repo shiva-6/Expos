@@ -29,6 +29,8 @@ Return_val = [PTBR + 2*(UserSP - 1)/512]*512 + (UserSP - 1)%512;
 
 if(File_Descriptor == -2) then
 
+    multipush(R0,R1,R2,R3);
+
     R3 = [[PTBR + 2*(UserSP - 3)/512]*512 + (UserSP - 3)%512];
 
     R2 = [SYSTEM_STATUS_TABLE + 1];
@@ -37,16 +39,17 @@ if(File_Descriptor == -2) then
 
     call MOD_4;
 
+    multipop(R0,R1,R2,R3);
+
     SP = [Process_Table + 13];
 
     [Process_Table + 9] = 0;
 
     [Return_val] = 0;
-
+    
     ireturn;
 
 endif;
-
 
 //If the file descriptor is invalid
 
@@ -74,7 +77,7 @@ Per_Proc_ResTble = [Per_Proc_ResTble + 11]*512 + 496;
 
 if([Per_Proc_ResTble + 2*File_Descriptor] != FILE) then
 
-    SP = UserSP;
+    SP = [Process_Table + 13];
 
     [Process_Table + 9] = 0;
 
@@ -98,7 +101,6 @@ alias Inodetable_Index R6;
 
 Inodetable_Index = [OPEN_FILE_TABLE + 4*Openfile_Index];
 
-
 //If current user doesnt own the file
 
 if(([Process_Table + 3] != 1)  &&  ([INODE_TABLE + Inodetable_Index*16 + 3] != [Process_Table + 3])  &&  ([INODE_TABLE + Inodetable_Index*16 + 4] == 0)) then
@@ -116,7 +118,7 @@ endif;
 
 //Acquiring Inode 
 
-multipush(R0,R1,R2,R3);
+multipush(R0,R1,R2,R3,R4,R5,R6);
 
 R1 = 4;
 
@@ -138,7 +140,7 @@ if(R0 == -1) then
 
 endif;
 
-multipop(R0,R1,R2,R3);
+multipop(R0,R1,R2,R3,R4,R5,R6);
 
 
 //Acquiring lseek Position
@@ -149,7 +151,7 @@ Lseek = [OPEN_FILE_TABLE + Openfile_Index*4 + 2];
 
 if(Lseek == MAX_FILE_SIZE) then
 
-    multipush(R0,R1,R2,R3,R4);
+    multipush(R0,R1,R2,R3,R4,R5,R6,R7);
 
     R1 = 5;
 
@@ -159,7 +161,7 @@ if(Lseek == MAX_FILE_SIZE) then
 
     call MOD_0;
 
-    multipop(R0,R1,R2,R3,R4);
+    multipop(R0,R1,R2,R3,R4,R5,R6,R7);
 
     SP = [Process_Table + 13];
 
@@ -176,7 +178,7 @@ endif;
 
 if(Lseek%512 == 0  &&  [INODE_TABLE + Inodetable_Index*16 + 2] == Lseek) then
 
-    multipush(R0,R1,R2,R3);
+    multipush(R0,R1,R2,R3,R4,R5,R6,R7);
 
     R1 = 3;
 
@@ -184,7 +186,7 @@ if(Lseek%512 == 0  &&  [INODE_TABLE + Inodetable_Index*16 + 2] == Lseek) then
 
     if(R0 == -1) then
 
-        multipush(R0);
+        multipush(R0,R1,R2,R3,R4,R5,R6);
 
         R1 = 5;
 
@@ -194,7 +196,7 @@ if(Lseek%512 == 0  &&  [INODE_TABLE + Inodetable_Index*16 + 2] == Lseek) then
 
         call MOD_0;
 
-        multipop(R0);
+        multipop(R0,R1,R2,R3,R4,R5,R6);
 
         SP = [Process_Table + 13];
 
@@ -210,7 +212,7 @@ if(Lseek%512 == 0  &&  [INODE_TABLE + Inodetable_Index*16 + 2] == Lseek) then
 
     Free_Block = R0;
 
-    multipop(R0,R1,R2,R3);
+    multipop(R0,R1,R2,R3,R4,R5,R6,R7);
 
     [INODE_TABLE + Inodetable_Index*16 + 8 + Lseek/512] = Free_Block;
 
@@ -230,7 +232,7 @@ Offset = Lseek%512;
 
 //Calling Buffered Write
 
-multipush(R0,R1,R2,R3,R4,R5);
+multipush(R0,R1,R2,R3,R4,R5,R6,R7);
 
 R1 = 1;
 
@@ -238,22 +240,24 @@ R2 = Disk_BlockNo;
 
 R3 = Offset;
 
-R4 = [[PTBR + 2*(UserSP - 3)/512]*512 + (UserSP - 3)%512];
+R4 = [[PTBR + 2*([Process_Table + 13] - 3)/512]*512 + ([Process_Table + 13] - 3)%512];
 
+//print R4;
 call MOD_3;
 
-multipop(R0,R1,R2,R3,R4,R5);
+multipop(R0,R1,R2,R3,R4,R5,R6,R7);
 
 
 alias Temp_Inode R11;
 
 Temp_Inode = INODE_TABLE + Inodetable_Index*16 + 2;
 
+
 if(Lseek == [Temp_Inode]) then
 
-    [Temp_Inode] = [Temp_Inode] + 512;
-
-    [ROOT_FILE + Inodetable_Index*8 + 1] = [Temp_Inode];
+    [Temp_Inode] = [Temp_Inode] + 1;
+    
+    [ROOT_FILE + Inodetable_Index*8 + 1] = [ROOT_FILE + Inodetable_Index*8 + 1] + 1;
 
 endif;
 
@@ -279,5 +283,7 @@ SP = [Process_Table + 13];
 [Process_Table + 9] = 0;
 
 [Return_val] = 0;
+
+//print "im done";
 
 ireturn;

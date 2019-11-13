@@ -24,4 +24,7 @@ load --int=14 ../spl/spl_progs/Interrupt14.xsm
 load --int=15 ../spl/spl_progs/Interrupt15.xsm
 load --init ../expl/expl_progs/init.xsm
 load --idle ../expl/expl_progs/idle.xsm
+load --exec ../expl/expl_progs/s25as1.xsm
+load --exec ../expl/expl_progs/s25as2.xsm
+load --exec ../expl/expl_progs/s25as3.xsm
 exit

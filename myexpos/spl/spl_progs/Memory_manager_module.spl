@@ -107,6 +107,8 @@ if(functionNum == 3) then
 
 		endif;
 
+		counter = counter + 1;
+
 	endwhile;
 
 	R0 = -1;

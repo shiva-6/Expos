@@ -28,6 +28,9 @@ cd spl
 cd ../expl
 ./expl expl_progs/idle.expl
 ./expl expl_progs/init.expl
+./expl expl_progs/s25as1.expl
+./expl expl_progs/s25as2.expl
+./expl expl_progs/s25as3.expl
 
 cd ../xfs-interface
 ./xfs-interface
