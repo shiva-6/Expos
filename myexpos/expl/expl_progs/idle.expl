@@ -1,0 +1,12 @@
+int main(){
+	decl	
+		int a;
+	enddecl
+	begin
+		a=exposcall("Write",-2,"In Idle");
+		while(1==1)do
+			a=1;
+		endwhile;
+		return 0;
+	end
+}

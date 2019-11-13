@@ -225,6 +225,7 @@ endwhile;
 // endwhile;
 
 // [75*512 + 32] = 0;
+breakpoint;
 
 return;
 

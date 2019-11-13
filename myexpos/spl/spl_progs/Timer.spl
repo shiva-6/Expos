@@ -197,7 +197,7 @@ backup;
 
 // //print [DeadLocked];
 
-// breakpoint;
+breakpoint;
 
 alias currentPID R0;
 currentPID = [SYSTEM_STATUS_TABLE + 1];
@@ -215,8 +215,6 @@ while(counter<MAX_PROC_NUM) do
      endif;
      counter=counter+1;
 endwhile;
-
-
 
 call MOD_5;
 

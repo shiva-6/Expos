@@ -22,6 +22,6 @@ load --int=11 ../spl/spl_progs/Interrupt11.xsm
 load --int=13 ../spl/spl_progs/Interrupt13.xsm
 load --int=14 ../spl/spl_progs/Interrupt14.xsm
 load --int=15 ../spl/spl_progs/Interrupt15.xsm
-load --init ../expl/expl_progs/s21init.xsm
-load --idle ../expl/expl_progs/s12idle.xsm
+load --init ../expl/expl_progs/init.xsm
+load --idle ../expl/expl_progs/idle.xsm
 exit

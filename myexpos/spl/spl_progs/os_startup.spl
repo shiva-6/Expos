@@ -64,5 +64,4 @@ PTBR=PAGE_TABLE_BASE;
 
 SP=8*512;
 
-breakpoint;
 ireturn;

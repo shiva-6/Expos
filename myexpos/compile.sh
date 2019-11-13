@@ -11,8 +11,10 @@ cd spl
 ./spl spl_progs/Memory_manager_module.spl
 ./spl spl_progs/Device_manager_module.spl
 ./spl spl_progs/Context_switch_module.spl
+./spl spl_progs/File_manager_module.spl
 ./spl spl_progs/Boot_module.spl
 ./spl spl_progs/Interrupt4.spl
+./spl spl_progs/Interrupt5.spl
 ./spl spl_progs/Interrupt6.spl
 ./spl spl_progs/Interrupt7.spl
 ./spl spl_progs/Interrupt8.spl
@@ -24,11 +26,8 @@ cd spl
 ./spl spl_progs/Interrupt15.spl
 
 cd ../expl
-./expl expl_progs/s20init.expl
-./expl expl_progs/s12idle.expl
-./expl expl_progs/s21init.expl
-./expl expl_progs/s21as2.expl
-./expl expl_progs/pid.expl
+./expl expl_progs/idle.expl
+./expl expl_progs/init.expl
 
 cd ../xfs-interface
 ./xfs-interface
